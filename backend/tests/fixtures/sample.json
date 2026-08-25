@@ -1,0 +1,6 @@
+{
+  "tender_id": "GEM/2026/B/12345",
+  "awardee": "Acme Infra Pvt Ltd",
+  "value_inr": 5000000,
+  "event_type": "award"
+}
