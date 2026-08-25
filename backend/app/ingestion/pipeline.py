@@ -13,6 +13,7 @@ document (provenance is never lost) with no parse result.
 """
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 
 from app.ingestion.base import SourceAdapter
@@ -26,6 +27,11 @@ from app.ingestion.errors import (
 from app.ingestion.http_client import HttpClient
 from app.ingestion.parsers import OcrEngine, PdfTextBackend, parse_document
 from app.ingestion.storage import RawDocumentSink
+from app.ingestion.types import FetchedDocument, ParsedContent
+
+# Called after a document is stored — the extension point where downstream
+# stages (document processing, event extraction) plug into ingestion.
+OnDocument = Callable[[FetchedDocument, ParsedContent | None], None]
 
 
 @dataclass
@@ -54,12 +60,14 @@ class IngestionRunner:
         pdf_text_backend: PdfTextBackend | None = None,
         ocr_engine: OcrEngine | None = None,
         max_items: int | None = None,
+        on_document: OnDocument | None = None,
     ) -> None:
         self._client = client
         self._sink = sink
         self._pdf_text_backend = pdf_text_backend
         self._ocr_engine = ocr_engine
         self._max_items = max_items
+        self._on_document = on_document
 
     def run(self, adapter: SourceAdapter) -> IngestionReport:
         report = IngestionReport(source_name=adapter.name)
@@ -109,5 +117,13 @@ class IngestionRunner:
             # Raw document is stored regardless of parse outcome.
             self._sink.store(document, parsed)
             report.stored += 1
+
+            # Downstream hook (processing + extraction) — failures here must not
+            # abort ingestion of the remaining items.
+            if self._on_document is not None:
+                try:
+                    self._on_document(document, parsed)
+                except Exception as exc:  # noqa: BLE001 - isolate downstream errors
+                    report.errors.append((item.url, f"on_document hook failed: {exc}"))
 
         return report

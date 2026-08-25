@@ -11,6 +11,8 @@ dependencies = [
     "pydantic>=2.7",
     "pydantic-settings>=2.2",
     "python-dotenv>=1.0",
+    # LLM event extraction
+    "anthropic>=0.40",
     # ingestion framework
     "httpx>=0.27",
     "beautifulsoup4>=4.12",
