@@ -1,0 +1,827 @@
+<title>GovIntel Leads</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<style>
+:root{
+  --bg:#f5f7fa; --surface:#ffffff; --surface-2:#eef1f6; --surface-3:#e7ebf2;
+  --border:#dde3ec; --border-strong:#c9d2e0;
+  --text:#182030; --muted:#5c6677; --faint:#8b95a6;
+  --accent:#3b3fc4; --accent-weak:#e9eafb; --accent-ink:#2a2ea0;
+  --good:#1a8f4c; --good-weak:#e2f3e8;
+  --warn:#a86a12; --warn-weak:#f6eddb;
+  --bad:#c0392b; --bad-weak:#f7e5e2;
+  --fact:#0f766e; --fact-weak:#dcefed;
+  --infer:#a15c00; --infer-weak:#f6ebd9;
+  --shadow:0 1px 2px rgba(20,30,50,.06),0 6px 20px rgba(20,30,50,.06);
+  --ring:0 0 0 3px var(--accent-weak);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+  --bg:#0e131e; --surface:#161c2a; --surface-2:#1b2331; --surface-3:#222c3d;
+  --border:#293345; --border-strong:#354158;
+  --text:#e7ecf5; --muted:#9aa5b8; --faint:#6f7c92;
+  --accent:#8b8ef7; --accent-weak:#242c47; --accent-ink:#b6b8fb;
+  --good:#43c07a; --good-weak:#17301f;
+  --warn:#e0a94a; --warn-weak:#33280f;
+  --bad:#e8695a; --bad-weak:#361a16;
+  --fact:#4bb5aa; --fact-weak:#123028;
+  --infer:#d9a24e; --infer-weak:#332512;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 26px rgba(0,0,0,.35);
+  --ring:0 0 0 3px var(--accent-weak);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0e131e; --surface:#161c2a; --surface-2:#1b2331; --surface-3:#222c3d;
+  --border:#293345; --border-strong:#354158;
+  --text:#e7ecf5; --muted:#9aa5b8; --faint:#6f7c92;
+  --accent:#8b8ef7; --accent-weak:#242c47; --accent-ink:#b6b8fb;
+  --good:#43c07a; --good-weak:#17301f;
+  --warn:#e0a94a; --warn-weak:#33280f;
+  --bad:#e8695a; --bad-weak:#361a16;
+  --fact:#4bb5aa; --fact-weak:#123028;
+  --infer:#d9a24e; --infer-weak:#332512;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 26px rgba(0,0,0,.35);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--bg); color:var(--text);
+  font-family:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+.mono{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;font-variant-numeric:tabular-nums}
+a{color:var(--accent-ink);text-decoration:none}
+a:hover{text-decoration:underline}
+button{font-family:inherit;cursor:pointer}
+:focus-visible{outline:none;box-shadow:var(--ring);border-radius:8px}
+
+/* ---- top bar ---- */
+header{
+  position:sticky;top:0;z-index:30;background:var(--surface);
+  border-bottom:1px solid var(--border);
+}
+.bar{
+  max-width:1200px;margin:0 auto;padding:14px 22px;display:flex;align-items:center;gap:16px;
+}
+.brand{display:flex;align-items:center;gap:11px;min-width:0}
+.mark{
+  width:34px;height:34px;border-radius:9px;flex:none;
+  background:linear-gradient(150deg,var(--accent),#6a6ef0);
+  display:grid;place-items:center;color:#fff;font-weight:700;font-size:17px;
+}
+.brand h1{font-size:16px;margin:0;font-weight:700;letter-spacing:-.01em}
+.brand p{margin:0;font-size:12px;color:var(--muted)}
+.bar .spacer{flex:1}
+.count{font-size:13px;color:var(--muted)}
+.count b{color:var(--text)}
+.iconbtn{
+  background:var(--surface-2);border:1px solid var(--border);color:var(--text);
+  width:38px;height:38px;border-radius:9px;display:grid;place-items:center;font-size:16px;
+}
+.iconbtn:hover{border-color:var(--border-strong)}
+
+/* ---- filters ---- */
+.filters{
+  position:sticky;top:63px;z-index:20;background:var(--bg);
+  border-bottom:1px solid var(--border);
+}
+.filters .inner{
+  max-width:1200px;margin:0 auto;padding:12px 22px;
+  display:flex;flex-wrap:wrap;gap:10px 12px;align-items:flex-end;
+}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);font-weight:600}
+select,input[type="search"]{
+  font-family:inherit;font-size:13px;color:var(--text);background:var(--surface);
+  border:1px solid var(--border);border-radius:8px;padding:7px 9px;min-width:120px;
+}
+input[type="search"]{min-width:170px}
+select:hover,input:hover{border-color:var(--border-strong)}
+.scorefield{min-width:170px}
+.scorefield .row{display:flex;align-items:center;gap:9px}
+input[type="range"]{accent-color:var(--accent);width:110px}
+.scoreval{font-size:13px;font-weight:600;min-width:26px}
+.reset{
+  background:none;border:1px solid var(--border);color:var(--muted);
+  border-radius:8px;padding:7px 12px;font-size:13px;height:33px
+}
+.reset:hover{color:var(--text);border-color:var(--border-strong)}
+
+/* ---- board ---- */
+main{max-width:1200px;margin:0 auto;padding:20px 22px 80px}
+.board-head{display:flex;align-items:baseline;gap:12px;margin:6px 0 16px}
+.board-head h2{font-size:13px;text-transform:uppercase;letter-spacing:.09em;margin:0;color:var(--muted)}
+.board-head .n{font-size:13px;color:var(--faint)}
+.leads{display:flex;flex-direction:column;gap:12px}
+
+.card{
+  background:var(--surface);border:1px solid var(--border);border-radius:14px;
+  box-shadow:var(--shadow);display:grid;
+  grid-template-columns:1fr 1fr 168px;gap:0;overflow:hidden;
+  transition:border-color .15s,transform .15s;
+}
+.card:hover{border-color:var(--border-strong)}
+.card .col{padding:16px 18px;min-width:0}
+.card .col.mid{border-left:1px solid var(--border);border-right:1px solid var(--border)}
+.card .col.right{background:var(--surface-2);display:flex;flex-direction:column;gap:10px;align-items:center;justify-content:center;text-align:center}
+
+.company{font-size:16px;font-weight:700;letter-spacing:-.01em;margin:0 0 2px}
+.evline{font-size:13.5px;color:var(--text);margin:0 0 8px}
+.evline .etype{color:var(--muted)}
+.meta{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;color:var(--muted)}
+.meta .k{color:var(--faint)}
+.value{color:var(--good);font-weight:600}
+.k-lbl{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--faint);font-weight:600;margin:0 0 2px}
+.mid .opp{font-size:14px;font-weight:600;margin:0 0 3px}
+.mid .whynow{font-size:12.5px;color:var(--muted);margin:0 0 10px}
+.contact-mini,.reason-mini{font-size:12.5px;margin:0}
+.contact-mini{margin-bottom:8px}
+.contact-mini .nm{font-weight:600}
+.contact-mini .role{color:var(--muted)}
+.reason-mini{color:var(--muted)}
+.badge{display:inline-block;font-size:11px;font-weight:600;padding:1px 7px;border-radius:999px;vertical-align:middle}
+.badge.fact{background:var(--fact-weak);color:var(--fact)}
+.badge.infer{background:var(--infer-weak);color:var(--infer)}
+.badge.unverified{background:var(--surface-3);color:var(--muted)}
+
+/* score ring */
+.ring{
+  --p:0; width:74px;height:74px;border-radius:50%;
+  background:conic-gradient(var(--grade) calc(var(--p)*1%), var(--surface-3) 0);
+  display:grid;place-items:center;
+}
+.ring .inner{
+  width:58px;height:58px;border-radius:50%;background:var(--surface-2);
+  display:grid;place-items:center;line-height:1;
+}
+.ring .num{font-size:20px;font-weight:700}
+.ring .den{font-size:10px;color:var(--faint)}
+.grade{font-size:12px;font-weight:700;padding:2px 9px;border-radius:6px}
+.confline{font-size:11.5px;color:var(--muted)}
+.statuspill{font-size:11px;font-weight:600;padding:3px 9px;border-radius:999px;border:1px solid transparent}
+.view{
+  background:var(--accent);color:#fff;border:none;border-radius:8px;
+  padding:7px 14px;font-size:13px;font-weight:600;width:100%
+}
+.view:hover{filter:brightness(1.06)}
+
+/* grade colors */
+.g-A{--grade:var(--good)} .g-A.grade{background:var(--good-weak);color:var(--good)}
+.g-B{--grade:#3a9bd6} .g-B.grade{background:#dcecf7;color:#1f6ea3}
+.g-C{--grade:var(--warn)} .g-C.grade{background:var(--warn-weak);color:var(--warn)}
+.g-D{--grade:#d0762e} .g-D.grade{background:var(--infer-weak);color:var(--infer)}
+.g-F{--grade:var(--bad)} .g-F.grade{background:var(--bad-weak);color:var(--bad)}
+:root[data-theme="dark"] .g-B.grade,:root:not([data-theme="light"]) .g-B.grade{background:#14293a;color:#63b3e0}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .g-B{--grade:#63b3e0}}
+:root[data-theme="dark"] .g-B{--grade:#63b3e0}
+
+/* status colors */
+.s-new{background:var(--accent-weak);color:var(--accent-ink)}
+.s-qualified{background:var(--good-weak);color:var(--good)}
+.s-contacted{background:#dcecf7;color:#1f6ea3}
+.s-meeting{background:var(--infer-weak);color:var(--infer)}
+.s-won{background:var(--good);color:#fff}
+.s-lost,.s-disqualified{background:var(--surface-3);color:var(--muted)}
+:root[data-theme="dark"] .s-contacted{background:#14293a;color:#63b3e0}
+
+.empty{padding:60px 20px;text-align:center;color:var(--muted)}
+.empty .big{font-size:15px;color:var(--text);font-weight:600;margin-bottom:4px}
+
+/* ---- detail slide-over ---- */
+.scrim{position:fixed;inset:0;background:rgba(12,18,30,.5);opacity:0;pointer-events:none;transition:opacity .2s;z-index:40}
+.scrim.open{opacity:1;pointer-events:auto}
+.panel{
+  position:fixed;top:0;right:0;height:100%;width:min(620px,100%);z-index:50;
+  background:var(--surface);border-left:1px solid var(--border);
+  transform:translateX(100%);transition:transform .24s ease;display:flex;flex-direction:column;
+  box-shadow:-16px 0 40px rgba(10,15,25,.18);
+}
+.panel.open{transform:translateX(0)}
+.panel-head{
+  padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:12px;
+  position:sticky;top:0;background:var(--surface);z-index:2
+}
+.panel-head .co{font-size:18px;font-weight:700;margin:0}
+.panel-head .sub{font-size:13px;color:var(--muted);margin:2px 0 0}
+.panel-head .score-chip{margin-left:auto;text-align:right;flex:none}
+.panel-head .score-chip .big{font-size:24px;font-weight:700}
+.closebtn{background:var(--surface-2);border:1px solid var(--border);color:var(--text);width:34px;height:34px;border-radius:8px;font-size:16px;flex:none}
+.panel-body{overflow-y:auto;padding:6px 20px 20px;flex:1}
+
+.sec{padding:16px 0;border-bottom:1px solid var(--border)}
+.sec:last-child{border-bottom:none}
+.sec h3{
+  font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:var(--faint);
+  margin:0 0 10px;display:flex;align-items:center;gap:8px
+}
+.sec h3 .step{
+  font-family:"IBM Plex Mono",monospace;background:var(--surface-3);color:var(--muted);
+  width:20px;height:20px;border-radius:6px;display:grid;place-items:center;font-size:11px;font-weight:600
+}
+.kv{display:grid;grid-template-columns:130px 1fr;gap:6px 12px;font-size:13.5px}
+.kv dt{color:var(--faint)}
+.kv dd{margin:0}
+.pill-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.chip{font-size:12px;background:var(--surface-2);border:1px solid var(--border);border-radius:999px;padding:3px 10px;color:var(--muted)}
+
+/* evidence rows */
+.ev{display:flex;gap:10px;padding:9px 0;border-top:1px dashed var(--border)}
+.ev:first-of-type{border-top:none}
+.ev .fid{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--faint);flex:none;padding-top:2px;width:26px}
+.ev .body{min-width:0}
+.ev .stmt{font-size:13.5px;margin:0 0 3px}
+.ev .snip{font-size:12.5px;color:var(--muted);font-style:italic;margin:0 0 3px}
+.ev .src{font-size:12px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.ev .conf{color:var(--faint)}
+
+.reasoning{font-size:13.5px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin:0 0 10px}
+.assum{font-size:13px;margin:2px 0}
+.assum .tag{font-weight:600;color:var(--infer)}
+.alt .tag{color:var(--muted);font-weight:600}
+
+/* score breakdown */
+.comp{display:grid;grid-template-columns:150px 1fr 52px;gap:10px;align-items:center;padding:5px 0;font-size:13px}
+.comp .track{height:8px;background:var(--surface-3);border-radius:99px;overflow:hidden}
+.comp .fill{height:100%;background:var(--accent);border-radius:99px}
+.comp .pts{text-align:right;font-family:"IBM Plex Mono",monospace;font-size:12.5px}
+.comp small{display:block;color:var(--faint);font-size:11px;font-weight:400}
+.total-row{display:flex;justify-content:space-between;align-items:baseline;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+.total-row .t{font-size:13px;color:var(--muted)}
+.total-row .v{font-family:"IBM Plex Mono",monospace;font-size:22px;font-weight:700}
+
+/* brief */
+.brief-sec{margin:0 0 12px}
+.brief-sec h4{font-size:13px;margin:0 0 2px;display:flex;align-items:center;gap:7px}
+.brief-sec p{font-size:13px;color:var(--text);margin:0;white-space:pre-line}
+.brief-sec .inf{font-size:10px;font-weight:600;color:var(--infer);background:var(--infer-weak);padding:1px 6px;border-radius:5px;text-transform:uppercase;letter-spacing:.04em}
+.risk{background:var(--warn-weak);border:1px solid transparent;border-radius:10px;padding:12px 14px}
+.risk p{white-space:pre-line;font-size:13px;margin:0}
+
+/* source docs */
+.doc{display:flex;gap:10px;align-items:center;padding:8px 0;border-top:1px dashed var(--border);font-size:13px}
+.doc:first-of-type{border-top:none}
+.doc .dt{font-size:11px;color:var(--faint);flex:none}
+.doc .kind{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);background:var(--surface-2);padding:1px 6px;border-radius:5px}
+
+/* feedback */
+.feedback{
+  position:sticky;bottom:0;background:var(--surface);border-top:1px solid var(--border);
+  padding:12px 20px;display:flex;flex-wrap:wrap;gap:8px
+}
+.fb{
+  font-size:12.5px;font-weight:600;border-radius:8px;padding:8px 12px;border:1px solid var(--border);
+  background:var(--surface-2);color:var(--text);display:flex;align-items:center;gap:6px
+}
+.fb:hover{border-color:var(--border-strong)}
+.fb.good:hover{background:var(--good-weak);color:var(--good);border-color:transparent}
+.fb.bad:hover,.fb.notrel:hover{background:var(--bad-weak);color:var(--bad);border-color:transparent}
+.fb.contacted:hover{background:#dcecf7;color:#1f6ea3;border-color:transparent}
+.fb.meeting:hover{background:var(--infer-weak);color:var(--infer);border-color:transparent}
+.fb.oppty:hover{background:var(--accent-weak);color:var(--accent-ink);border-color:transparent}
+
+/* toast */
+.toast{
+  position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);opacity:0;pointer-events:none;
+  background:var(--text);color:var(--bg);font-size:13px;font-weight:500;padding:10px 16px;border-radius:10px;
+  z-index:80;transition:opacity .2s,transform .2s;box-shadow:var(--shadow)
+}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+@media (max-width:820px){
+  .card{grid-template-columns:1fr}
+  .card .col.mid{border-left:none;border-right:none;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+  .card .col.right{flex-direction:row;flex-wrap:wrap;justify-content:space-between}
+  .ring{order:-1}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<header>
+  <div class="bar">
+    <div class="brand">
+      <div class="mark">GI</div>
+      <div>
+        <h1>GovIntel Leads</h1>
+        <p>Companies that just won government money — and why to call them</p>
+      </div>
+    </div>
+    <div class="spacer"></div>
+    <div class="count"><b id="shownCount">0</b> of <span id="totalCount">0</span> leads</div>
+    <button class="iconbtn" id="themeToggle" title="Toggle theme" aria-label="Toggle theme">◐</button>
+  </div>
+</header>
+
+<div class="filters">
+  <div class="inner">
+    <div class="field scorefield">
+      <label for="fScore">Min score</label>
+      <div class="row"><input type="range" id="fScore" min="0" max="100" value="0" step="5"><span class="scoreval mono" id="fScoreVal">0</span></div>
+    </div>
+    <div class="field"><label for="fSector">Sector</label><select id="fSector"></select></div>
+    <div class="field"><label for="fProduct">Product</label><select id="fProduct"></select></div>
+    <div class="field"><label for="fEvent">Event type</label><select id="fEvent"></select></div>
+    <div class="field"><label for="fDate">Date</label><select id="fDate">
+      <option value="0">Any time</option><option value="30">Last 30 days</option>
+      <option value="90">Last 90 days</option><option value="180">Last 180 days</option>
+    </select></div>
+    <div class="field"><label for="fOrg">Government organization</label><select id="fOrg"></select></div>
+    <div class="field"><label for="fStatus">Status</label><select id="fStatus"></select></div>
+    <div class="field"><label for="fCompany">Company</label><input type="search" id="fCompany" placeholder="Search company…"></div>
+    <button class="reset" id="resetBtn">Reset</button>
+  </div>
+</div>
+
+<main>
+  <div class="board-head">
+    <h2>High-priority leads</h2>
+    <span class="n" id="boardNote"></span>
+  </div>
+  <div class="leads" id="leads"></div>
+</main>
+
+<div class="scrim" id="scrim"></div>
+<aside class="panel" id="panel" aria-label="Lead detail" aria-hidden="true"></aside>
+<div class="toast" id="toast"></div>
+
+<script>
+const money = v => v==null ? "—" : (v>=1e7 ? "₹"+(v/1e7).toFixed(v>=1e8?0:1)+" cr" : "₹"+v.toLocaleString("en-IN"));
+const daysAgo = iso => Math.round((Date.now()-new Date(iso))/864e5);
+const esc = s => (s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+const STATUS = {new:"New",qualified:"Qualified",contacted:"Contacted",meeting:"Meeting booked",won:"Won",lost:"Lost",disqualified:"Not relevant"};
+
+/* ---- representative data (mirrors the GovIntel pipeline output) ---- */
+const LEADS = [
+ {
+  id:"L1", company:"Acme Defence Systems Pvt Ltd", status:"new",
+  event:{type:"contract_award", etypeLabel:"Contract award", title:"Border surveillance & sensor systems", value:5e8,
+    org:"Ministry of Defence", dept:"Dept. of Defence Production", sector:"Defence", date:"2026-08-18",
+    ref:"MoD/DDP/2026/AW/1183", location:"New Delhi"},
+  company_p:{industry:"Defence Manufacturing", hq:"Pune, Maharashtra", size:"1,001–5,000", revenue:"₹1,200 cr (FY25)",
+    website:"https://acmedefence.example", desc:"Designs and manufactures surveillance, radar and electro-optic systems for defence and homeland security.",
+    signals:[{t:"Recent contract",x:"Won ₹50 cr MoD surveillance award",url:"https://pib.gov.in/PressReleasePage.aspx?PRID=defence1183",c:.9},
+             {t:"Technology",x:"Announced AI-based threat detection R&D",url:"https://acmedefence.example/news/ai-rd",c:.65}]},
+  opportunity:{product:"Cybersecurity Services", category:"cybersecurity", need:"Cybersecurity & data-protection need",
+    tier:"inference", timing:"0–6 months",
+    reasoning:"Acme Defence Systems won a ₹50 cr border-surveillance contract handling classified sensor and location data. Under the ‘Cybersecurity Services’ rule this suggests a data-protection and compliance need. Corroborated by a company signal: technology_activity.",
+    assumptions:["assumes sensitive data is handled","assumes MoD compliance obligations apply"],
+    alternatives:["may rely on an in-house security team","may already be CERT-In empanelled"],
+    depts:["IT Security","CISO office","Compliance"], titles:["CISO","CIO","Head of IT Security"]},
+  whyNow:"Award is 8 days old and the programme handles classified data — security procurement typically follows within a quarter.",
+  reasonToCall:"Their new MoD surveillance mandate creates an immediate data-protection obligation — a timely fit for a managed cybersecurity engagement.",
+  score:{total:91, grade:"A", confidence:.88, components:[
+    {k:"Sector relevance",p:25,m:25,n:"Defence ∈ target sectors"},
+    {k:"Event significance",p:20,m:20,n:"₹50 cr contract award"},
+    {k:"Product fit",p:18,m:20,n:"opportunity confidence 0.82"},
+    {k:"Recency",p:15,m:15,n:"8 days old"},
+    {k:"Company fit",p:9,m:10,n:"industry + size known"},
+    {k:"Decision-maker",p:4,m:5,n:"CISO identified"},
+    {k:"Evidence confidence",p:0,m:5,n:"mean evidence 0.83 → 4 (rounding)"}]},
+  contact:{name:"Priya Rao", title:"Chief Information Security Officer", seniority:"c_level",
+    email:"priya.rao@acmedefence.example", linkedin:"https://linkedin.example/in/priyarao",
+    source:"directory + provider", confidence:.85, verified:true},
+  evidence:[
+    {id:"F1",tier:"fact",stmt:"Acme Defence Systems was awarded a border surveillance contract by the Ministry of Defence.",snip:"...MoD awards ₹50 crore surveillance systems contract to Acme Defence...",url:"https://pib.gov.in/PressReleasePage.aspx?PRID=defence1183",c:.9},
+    {id:"F2",tier:"fact",stmt:"Event value: ₹50.0 cr",url:"https://pib.gov.in/PressReleasePage.aspx?PRID=defence1183",c:.9},
+    {id:"F3",tier:"fact",stmt:"industry: Defence Manufacturing",url:"https://mca.gov.in/company/acme",c:.9},
+    {id:"F4",tier:"inference",stmt:"Handling classified sensor data implies a heightened cybersecurity obligation.",c:.7}],
+  sources:[
+    {title:"PIB — MoD surveillance contract press release", kind:"press", date:"2026-08-18", url:"https://pib.gov.in/PressReleasePage.aspx?PRID=defence1183"},
+    {title:"CPPP eProcurement — award notice MoD/DDP/2026/AW/1183", kind:"eprocure", date:"2026-08-18", url:"https://eprocure.gov.in/award/1183"},
+    {title:"MCA master data — Acme Defence Systems Pvt Ltd", kind:"registry", date:"2026-08-20", url:"https://mca.gov.in/company/acme"}],
+  brief:[
+    {t:"Trigger",inf:false,x:"Acme Defence Systems is linked to a contract award worth ₹50.0 cr in Defence (2026-08-18)."},
+    {t:"Why this company",inf:false,x:"Acme Defence Systems: industry Defence Manufacturing; HQ Pune, Maharashtra; size 1,001–5,000."},
+    {t:"Why now",inf:true,x:"Timely because the event is dated 2026-08-18, and recent technology activity was reported."},
+    {t:"Business need hypothesis",inf:true,x:"Hypothesis (inference): Cybersecurity & data-protection need. Classified sensor data suggests a security and compliance requirement."},
+    {t:"Who to contact",inf:false,x:"Priya Rao — Chief Information Security Officer (verified)."},
+    {t:"Reason to call",inf:true,x:"Acme's MoD surveillance mandate could create a data-protection need, a timely fit for a managed cybersecurity engagement."},
+    {t:"Recommended next action",inf:true,x:"Call the CISO within 0–6 months, leading with the surveillance award as the trigger."}],
+  risk:"This lead may be incorrect if:\n- Assumption: sensitive data is handled in-house rather than by the buyer\n- Alternative: Acme may rely on an in-house security team\n- The core need is an inference, not a verified fact\n- Some evidence is low-confidence: F4"
+ },
+ {
+  id:"L2", company:"Metro Infratech Pvt Ltd", status:"qualified",
+  event:{type:"work_order", etypeLabel:"Work order", title:"Integrated Command & Control Centre (ICCC)", value:12e8,
+    org:"Pune Smart City Development Corp.", dept:"Smart Cities Mission", sector:"Smart Cities", date:"2026-08-05",
+    ref:"PSCDCL/ICCC/2026/WO/44", location:"Pune, Maharashtra"},
+  company_p:{industry:"IT & Urban Infrastructure", hq:"Bengaluru, Karnataka", size:"501–1,000", revenue:"₹640 cr (FY25)",
+    website:"https://metroinfratech.example", desc:"Systems integrator for smart-city command centres, IoT and urban data platforms.",
+    signals:[{t:"Recent contract",x:"₹120 cr ICCC work order (Pune)",url:"https://eprocure.gov.in/award/psc44",c:.9},
+             {t:"Expansion",x:"Opening a new delivery centre in Pune",url:"https://metroinfratech.example/news/pune",c:.7},
+             {t:"Hiring",x:"~120 open cloud/DevOps roles",url:"https://metroinfratech.example/careers",c:.6}]},
+  opportunity:{product:"Cloud & Infrastructure", category:"cloud_infrastructure", need:"Cloud/compute/networking scale-up",
+    tier:"inference", timing:"0–9 months",
+    reasoning:"Metro Infratech won a ₹120 cr ICCC work order requiring large-scale data ingestion and video analytics. Under the ‘Cloud & Infrastructure’ rule this implies a cloud/compute scale-up. Corroborated by company signals: expansion_activity, hiring_signals.",
+    assumptions:["assumes new digital workloads","assumes cloud adoption over on-prem"],
+    alternatives:["may use existing capacity","may standardise on a competing hyperscaler"],
+    depts:["IT Infrastructure","Cloud/DevOps"], titles:["CTO","Head of Infrastructure","Cloud Architect"]},
+  whyNow:"Work order signed 20 days ago; ICCC delivery ramps immediately and hiring for cloud roles is already live.",
+  reasonToCall:"The ICCC build needs elastic compute and video analytics at city scale — position managed cloud before their architecture locks in.",
+  score:{total:84, grade:"A", confidence:.82, components:[
+    {k:"Sector relevance",p:25,m:25,n:"Smart Cities ∈ targets"},
+    {k:"Event significance",p:20,m:20,n:"₹120 cr work order"},
+    {k:"Product fit",p:16,m:20,n:"opportunity confidence 0.78"},
+    {k:"Recency",p:14,m:15,n:"20 days old"},
+    {k:"Company fit",p:5,m:10,n:"industry known, size known"},
+    {k:"Decision-maker",p:0,m:5,n:"no verified contact yet"},
+    {k:"Evidence confidence",p:4,m:5,n:"mean evidence 0.80"}]},
+  contact:null,
+  evidence:[
+    {id:"F1",tier:"fact",stmt:"Metro Infratech received an ICCC work order from Pune Smart City.",snip:"...PSCDCL issues ₹120 cr work order for Integrated Command & Control Centre...",url:"https://eprocure.gov.in/award/psc44",c:.9},
+    {id:"F2",tier:"fact",stmt:"Event value: ₹120.0 cr",url:"https://eprocure.gov.in/award/psc44",c:.9},
+    {id:"F3",tier:"fact",stmt:"expansion_activity: Opening a new delivery centre in Pune",url:"https://metroinfratech.example/news/pune",c:.7},
+    {id:"F4",tier:"fact",stmt:"hiring_signals: ~120 open cloud/DevOps roles",url:"https://metroinfratech.example/careers",c:.6}],
+  sources:[
+    {title:"CPPP eProcurement — ICCC work order PSCDCL/ICCC/2026/WO/44", kind:"eprocure", date:"2026-08-05", url:"https://eprocure.gov.in/award/psc44"},
+    {title:"Company newsroom — new Pune delivery centre", kind:"web", date:"2026-08-12", url:"https://metroinfratech.example/news/pune"}],
+  brief:[
+    {t:"Trigger",inf:false,x:"Metro Infratech is linked to a work order worth ₹120.0 cr in Smart Cities (2026-08-05)."},
+    {t:"Why this company",inf:false,x:"Metro Infratech: industry IT & Urban Infrastructure; HQ Bengaluru; size 501–1,000."},
+    {t:"Why now",inf:true,x:"Timely because the event is dated 2026-08-05, and recent expansion and hiring were reported."},
+    {t:"Business need hypothesis",inf:true,x:"Hypothesis (inference): Cloud/compute/networking scale-up for the ICCC build."},
+    {t:"Who to contact",inf:true,x:"No specific contact verified yet. Target role(s): CTO, Head of Infrastructure, Cloud Architect in IT Infrastructure."},
+    {t:"Reason to call",inf:true,x:"The ICCC build needs elastic compute at city scale — a timely fit for a managed cloud offer."},
+    {t:"Recommended next action",inf:true,x:"Prioritise: identify the CTO and reach out within 0–9 months."}],
+  risk:"This lead may be incorrect if:\n- Alternative: Metro Infratech may use existing capacity\n- The core need is an inference, not a verified fact\n- No verified decision-maker contact identified\n- Some evidence is low-confidence: F4"
+ },
+ {
+  id:"L3", company:"Bharat Health Systems Ltd", status:"contacted",
+  event:{type:"funding", etypeLabel:"Funding release", title:"ABDM digital health infrastructure grant", value:35e7,
+    org:"Ministry of Health & Family Welfare", dept:"National Health Authority", sector:"Healthcare", date:"2026-07-22",
+    ref:"NHA/ABDM/2026/GR/210", location:"New Delhi"},
+  company_p:{industry:"Health IT", hq:"Hyderabad, Telangana", size:"201–500", revenue:"₹180 cr (FY25)",
+    website:"https://bharathealth.example", desc:"Digital health records, telemedicine and hospital information systems for public health programmes.",
+    signals:[{t:"Recent contract",x:"₹35 cr ABDM grant",url:"https://pib.gov.in/nha210",c:.85},
+             {t:"Funding",x:"Closed Series B in Q2",url:"https://bharathealth.example/news/seriesb",c:.6}]},
+  opportunity:{product:"Cloud & Infrastructure", category:"cloud_infrastructure", need:"Cloud/compute/networking scale-up",
+    tier:"inference", timing:"0–9 months",
+    reasoning:"Bharat Health received a ₹35 cr ABDM digital-health grant to build health-record infrastructure, implying a cloud scale-up and, given patient data, a parallel security need.",
+    assumptions:["assumes ABHA-linked record workloads","assumes cloud hosting"],
+    alternatives:["may use NHA-provided infrastructure","may already run on a hyperscaler"],
+    depts:["IT Infrastructure","Compliance"], titles:["CTO","Head of Engineering","DPO"]},
+  whyNow:"Grant released a month ago; ABDM builds are time-bound and patient-data compliance is required from day one.",
+  reasonToCall:"An ABDM mandate means health-record workloads plus data-protection duties — a fit for managed cloud with compliance guardrails.",
+  score:{total:72, grade:"B", confidence:.74, components:[
+    {k:"Sector relevance",p:25,m:25,n:"Healthcare ∈ targets"},
+    {k:"Event significance",p:17,m:20,n:"₹35 cr funding"},
+    {k:"Product fit",p:15,m:20,n:"opportunity confidence 0.72"},
+    {k:"Recency",p:11,m:15,n:"34 days old"},
+    {k:"Company fit",p:4,m:10,n:"industry known"},
+    {k:"Decision-maker",p:0,m:5,n:"no verified contact"},
+    {k:"Evidence confidence",p:0,m:5,n:"mean evidence 0.72 → 4"}]},
+  contact:{name:"—", title:"Target: CTO / DPO", seniority:"unknown", email:null, linkedin:null, source:"role suggestion", confidence:null, verified:false},
+  evidence:[
+    {id:"F1",tier:"fact",stmt:"NHA released an ABDM digital-health grant to Bharat Health Systems.",snip:"...₹35 crore released under ABDM for digital health infrastructure...",url:"https://pib.gov.in/nha210",c:.85},
+    {id:"F2",tier:"fact",stmt:"Event value: ₹35.0 cr",url:"https://pib.gov.in/nha210",c:.85},
+    {id:"F3",tier:"inference",stmt:"Patient health records imply data-protection obligations.",c:.6}],
+  sources:[
+    {title:"PIB — NHA ABDM grant note", kind:"press", date:"2026-07-22", url:"https://pib.gov.in/nha210"},
+    {title:"NHA portal — grant NHA/ABDM/2026/GR/210", kind:"api", date:"2026-07-22", url:"https://abdm.gov.in/grant/210"}],
+  brief:[
+    {t:"Trigger",inf:false,x:"Bharat Health Systems is linked to a funding release worth ₹35.0 cr in Healthcare (2026-07-22)."},
+    {t:"Why this company",inf:false,x:"Bharat Health Systems: industry Health IT; HQ Hyderabad; size 201–500."},
+    {t:"Why now",inf:true,x:"Timely because the event is dated 2026-07-22, and a recent funding round was reported."},
+    {t:"Business need hypothesis",inf:true,x:"Hypothesis (inference): Cloud scale-up plus patient-data protection for ABDM records."},
+    {t:"Who to contact",inf:true,x:"No specific contact verified yet. Target role(s): CTO, Head of Engineering, DPO."},
+    {t:"Reason to call",inf:true,x:"ABDM record workloads and compliance duties are a fit for managed cloud with guardrails."},
+    {t:"Recommended next action",inf:true,x:"Prioritise: identify the CTO and reach out within 0–9 months."}],
+  risk:"This lead may be incorrect if:\n- Alternative: may use NHA-provided infrastructure\n- The core need is an inference, not a verified fact\n- No verified decision-maker contact identified\n- Some evidence is low-confidence: F3"
+ },
+ {
+  id:"L4", company:"EduNext Learning Solutions Pvt Ltd", status:"new",
+  event:{type:"scheme", etypeLabel:"Scheme / funding", title:"Skill India digital skilling programme", value:2e8,
+    org:"Ministry of Skill Development & Entrepreneurship", dept:"NSDC", sector:"Education & EdTech", date:"2026-06-30",
+    ref:"MSDE/NSDC/2026/SCH/77", location:"New Delhi"},
+  company_p:{industry:"EdTech", hq:"Noida, Uttar Pradesh", size:"51–200", revenue:"—",
+    website:"https://edunext.example", desc:"Vocational and digital-skilling content and delivery platform for government skilling schemes.",
+    signals:[{t:"Recent contract",x:"Empanelled under Skill India digital push",url:"https://eprocure.gov.in/award/msde77",c:.75}]},
+  opportunity:{product:"Event Sponsorship & Media", category:"events_sponsorship", need:"Brand visibility / thought-leadership at sector events",
+    tier:"speculation", timing:"1–6 months",
+    reasoning:"EduNext is newly empanelled under a national skilling scheme. Under the ‘Event Sponsorship & Media’ rule this could create appetite for visibility at governance/education events — a speculation with no corroborating spend signal yet.",
+    assumptions:["assumes a marketing budget","assumes interest in sector visibility"],
+    alternatives:["may focus purely on delivery","may already sponsor rival events"],
+    depts:["Marketing","Business Development"], titles:["CMO","Head of Marketing","BD Head"]},
+  whyNow:"Fresh empanelment is the moment companies seek visibility with government buyers — before competitors do.",
+  reasonToCall:"A newly-empanelled skilling provider is a natural sponsor for an education-governance summit reaching their exact buyers.",
+  score:{total:61, grade:"B", confidence:.6, components:[
+    {k:"Sector relevance",p:25,m:25,n:"Education ∈ targets"},
+    {k:"Event significance",p:11,m:20,n:"scheme, ₹20 cr"},
+    {k:"Product fit",p:12,m:20,n:"opportunity confidence 0.55"},
+    {k:"Recency",p:9,m:15,n:"56 days old"},
+    {k:"Company fit",p:4,m:10,n:"industry known"},
+    {k:"Decision-maker",p:0,m:5,n:"no verified contact"},
+    {k:"Evidence confidence",p:0,m:5,n:"mean evidence 0.75 → 4 (speculation cap)"}]},
+  contact:null,
+  evidence:[
+    {id:"F1",tier:"fact",stmt:"EduNext was empanelled under a Skill India digital skilling scheme.",snip:"...NSDC empanels providers for digital skilling worth ₹20 crore...",url:"https://eprocure.gov.in/award/msde77",c:.75},
+    {id:"F2",tier:"speculation",stmt:"Empanelment may create appetite for brand visibility at sector events.",c:.4}],
+  sources:[
+    {title:"CPPP eProcurement — NSDC empanelment MSDE/NSDC/2026/SCH/77", kind:"eprocure", date:"2026-06-30", url:"https://eprocure.gov.in/award/msde77"}],
+  brief:[
+    {t:"Trigger",inf:false,x:"EduNext is linked to a scheme / funding empanelment in Education & EdTech (2026-06-30)."},
+    {t:"Why this company",inf:false,x:"EduNext: industry EdTech; HQ Noida; size 51–200."},
+    {t:"Why now",inf:true,x:"Timing is moderate — the empanelment is ~8 weeks old; act before competitors."},
+    {t:"Business need hypothesis",inf:true,x:"Hypothesis (speculation): appetite for brand visibility at education-governance events."},
+    {t:"Who to contact",inf:true,x:"No specific contact verified yet. Target role(s): CMO, Head of Marketing, BD Head."},
+    {t:"Reason to call",inf:true,x:"A newly-empanelled provider is a natural sponsor for an education-governance summit."},
+    {t:"Recommended next action",inf:true,x:"Nurture: gather stronger signals (marketing spend) before outreach."}],
+  risk:"This lead may be incorrect if:\n- Assumption: assumes a marketing budget exists\n- Alternative: may focus purely on delivery\n- The core need is a speculation, not a verified fact\n- No verified decision-maker contact identified"
+ },
+ {
+  id:"L5", company:"Ganga Waterworks Ltd", status:"new",
+  event:{type:"work_order", etypeLabel:"Work order", title:"Jal Jeevan Mission pipeline package", value:8e8,
+    org:"State Water & Sanitation Mission (UP)", dept:"Jal Jeevan Mission", sector:"Urban Infrastructure", date:"2026-08-11",
+    ref:"UPSWSM/JJM/2026/WO/902", location:"Lucknow, Uttar Pradesh"},
+  company_p:{industry:"Water Infrastructure / EPC", hq:"Kanpur, Uttar Pradesh", size:"1,001–5,000", revenue:"₹910 cr (FY25)",
+    website:null, desc:"EPC contractor for water supply, pipelines and treatment plants under state and central missions.",
+    signals:[{t:"Recent contract",x:"₹80 cr Jal Jeevan pipeline package",url:"https://eprocure.gov.in/award/jjm902",c:.9}]},
+  opportunity:{product:"Workforce & Staffing", category:"workforce_staffing", need:"Hiring / workforce ramp-up for project execution",
+    tier:"inference", timing:"0–6 months",
+    reasoning:"Ganga Waterworks won a ₹80 cr pipeline package requiring large field execution. Under the ‘Workforce & Staffing’ rule this implies a hiring / workforce ramp-up. No corroborating hiring signal is verified yet.",
+    assumptions:["assumes in-house execution","assumes net-new headcount"],
+    alternatives:["may subcontract execution","may redeploy existing crews"],
+    depts:["HR","Talent Acquisition","Operations"], titles:["CHRO","Head of Talent","Project Director"]},
+  whyNow:"Work order is a week old; field mobilisation and hiring for pipeline projects begin within weeks.",
+  reasonToCall:"A large EPC package usually triggers a rapid site-workforce ramp — a fit for staffing/managed-hiring support.",
+  score:{total:55, grade:"C", confidence:.55, components:[
+    {k:"Sector relevance",p:12,m:25,n:"no explicit sector target (neutral)"},
+    {k:"Event significance",p:19,m:20,n:"₹80 cr work order"},
+    {k:"Product fit",p:12,m:20,n:"opportunity confidence 0.55"},
+    {k:"Recency",p:14,m:15,n:"7 days old"},
+    {k:"Company fit",p:8,m:10,n:"industry + size known"},
+    {k:"Decision-maker",p:0,m:5,n:"no verified contact"},
+    {k:"Evidence confidence",p:0,m:5,n:"mean evidence 0.90 but need-tier capped"}]},
+  contact:null,
+  evidence:[
+    {id:"F1",tier:"fact",stmt:"Ganga Waterworks received a Jal Jeevan Mission pipeline work order.",snip:"...UPSWSM awards ₹80 crore pipeline package under Jal Jeevan Mission...",url:"https://eprocure.gov.in/award/jjm902",c:.9},
+    {id:"F2",tier:"fact",stmt:"Event value: ₹80.0 cr",url:"https://eprocure.gov.in/award/jjm902",c:.9}],
+  sources:[
+    {title:"CPPP eProcurement — JJM work order UPSWSM/JJM/2026/WO/902", kind:"eprocure", date:"2026-08-11", url:"https://eprocure.gov.in/award/jjm902"}],
+  brief:[
+    {t:"Trigger",inf:false,x:"Ganga Waterworks is linked to a work order worth ₹80.0 cr in Urban Infrastructure (2026-08-11)."},
+    {t:"Why this company",inf:false,x:"Ganga Waterworks: industry Water Infrastructure / EPC; HQ Kanpur; size 1,001–5,000."},
+    {t:"Why now",inf:true,x:"Timely because the event is dated 2026-08-11; field mobilisation begins quickly."},
+    {t:"Business need hypothesis",inf:true,x:"Hypothesis (inference): workforce ramp-up for pipeline execution."},
+    {t:"Who to contact",inf:true,x:"No specific contact verified yet. Target role(s): CHRO, Head of Talent, Project Director."},
+    {t:"Reason to call",inf:true,x:"A large EPC package usually triggers a rapid site-workforce ramp."},
+    {t:"Recommended next action",inf:true,x:"Nurture: confirm hiring signals before outreach."}],
+  risk:"This lead may be incorrect if:\n- Alternative: may subcontract execution rather than hire\n- The core need is an inference, not a verified fact\n- Unverified company attributes: revenue confirmed but hiring intent unknown\n- No verified decision-maker contact identified"
+ },
+ {
+  id:"L6", company:"FinCore Technologies Pvt Ltd", status:"disqualified",
+  event:{type:"approval", etypeLabel:"Regulatory approval", title:"RBI regulatory sandbox cohort admission", value:null,
+    org:"Reserve Bank of India", dept:"FinTech Dept.", sector:"BFSI", date:"2026-05-14",
+    ref:"RBI/FT/2026/SBX/031", location:"Mumbai, Maharashtra"},
+  company_p:{industry:"FinTech", hq:"Mumbai, Maharashtra", size:"51–200", revenue:"—", website:"https://fincore.example",
+    desc:"Payments and lending infrastructure startup admitted to the RBI regulatory sandbox.",
+    signals:[]},
+  opportunity:{product:"Event Sponsorship & Media", category:"events_sponsorship", need:"Brand visibility / thought-leadership at sector events",
+    tier:"speculation", timing:"1–6 months",
+    reasoning:"FinCore was admitted to the RBI sandbox — a credibility milestone. Under the ‘Event Sponsorship & Media’ rule this could create visibility appetite, but there is no funding or spend signal and no monetary value attached.",
+    assumptions:["assumes a marketing budget","assumes sandbox success"],
+    alternatives:["may stay heads-down through the sandbox","may lack budget as an early-stage startup"],
+    depts:["Marketing","Founder's office"], titles:["Founder","CMO"]},
+  whyNow:"Sandbox admission is a PR moment, but it is months old and no spend signal has appeared.",
+  reasonToCall:"Sandbox credibility could support a BFSI-innovation speaking slot — low priority until a budget signal appears.",
+  score:{total:43, grade:"C", confidence:.4, components:[
+    {k:"Sector relevance",p:25,m:25,n:"BFSI ∈ targets"},
+    {k:"Event significance",p:6,m:20,n:"approval, no value"},
+    {k:"Product fit",p:8,m:20,n:"opportunity confidence 0.4"},
+    {k:"Recency",p:4,m:15,n:"103 days old"},
+    {k:"Company fit",p:0,m:10,n:"early-stage, little verified"},
+    {k:"Decision-maker",p:0,m:5,n:"no verified contact"},
+    {k:"Evidence confidence",p:0,m:5,n:"mean evidence 0.5 → 3"}]},
+  contact:null,
+  evidence:[
+    {id:"F1",tier:"fact",stmt:"FinCore Technologies was admitted to the RBI regulatory sandbox.",snip:"...RBI admits fintechs to 2026 regulatory sandbox cohort...",url:"https://rbi.org.in/sandbox/031",c:.6},
+    {id:"F2",tier:"speculation",stmt:"Sandbox admission may create appetite for BFSI event visibility.",c:.35}],
+  sources:[
+    {title:"RBI — regulatory sandbox cohort notification", kind:"press", date:"2026-05-14", url:"https://rbi.org.in/sandbox/031"}],
+  brief:[
+    {t:"Trigger",inf:false,x:"FinCore is linked to a regulatory approval in BFSI (2026-05-14)."},
+    {t:"Why this company",inf:false,x:"Limited verified public data on FinCore Technologies; confirm during discovery."},
+    {t:"Why now",inf:true,x:"Timing is weak — the approval is over three months old with no spend signal."},
+    {t:"Business need hypothesis",inf:true,x:"Hypothesis (speculation): appetite for BFSI event visibility."},
+    {t:"Who to contact",inf:true,x:"No specific contact verified yet. Target role(s): Founder, CMO."},
+    {t:"Reason to call",inf:true,x:"Sandbox credibility could support a speaking slot — low priority for now."},
+    {t:"Recommended next action",inf:true,x:"De-prioritise / monitor for stronger signals."}],
+  risk:"This lead may be incorrect if:\n- Assumption: assumes a marketing budget exists\n- Alternative: may stay heads-down through the sandbox\n- The core need is a speculation, not a verified fact\n- Unverified company attributes: revenue, size, HQ\n- No verified decision-maker contact identified"
+ }
+];
+
+/* ---- state & elements ---- */
+const el = id => document.getElementById(id);
+const state = {score:0, sector:"", product:"", event:"", date:0, org:"", status:"", company:""};
+const feedbackLog = {};
+
+function uniq(getter){return [...new Set(LEADS.map(getter))].sort();}
+function fillSelect(id, values, allLabel){
+  const s = el(id);
+  s.innerHTML = `<option value="">${allLabel}</option>` + values.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join("");
+}
+fillSelect("fSector", uniq(l=>l.event.sector), "All sectors");
+fillSelect("fProduct", uniq(l=>l.opportunity.product), "All products");
+fillSelect("fEvent", uniq(l=>l.event.etypeLabel), "All event types");
+fillSelect("fOrg", uniq(l=>l.event.org), "All organizations");
+el("fStatus").innerHTML = `<option value="">Any status</option>` + Object.entries(STATUS).map(([k,v])=>`<option value="${k}">${v}</option>`).join("");
+el("totalCount").textContent = LEADS.length;
+
+function passes(l){
+  if(l.score.total < state.score) return false;
+  if(state.sector && l.event.sector!==state.sector) return false;
+  if(state.product && l.opportunity.product!==state.product) return false;
+  if(state.event && l.event.etypeLabel!==state.event) return false;
+  if(state.org && l.event.org!==state.org) return false;
+  if(state.status && l.status!==state.status) return false;
+  if(state.date && daysAgo(l.event.date) > state.date) return false;
+  if(state.company && !l.company.toLowerCase().includes(state.company.toLowerCase())) return false;
+  return true;
+}
+
+function cardHTML(l){
+  const c = l.contact;
+  const contactMini = c && c.verified
+    ? `<span class="nm">${esc(c.name)}</span> <span class="role">· ${esc(c.title)}</span> <span class="badge fact">verified</span>`
+    : `<span class="role">${esc(l.opportunity.titles.slice(0,2).join(", "))}</span> <span class="badge unverified">role only</span>`;
+  return `<article class="card" data-id="${l.id}">
+    <div class="col">
+      <h3 class="company">${esc(l.company)}</h3>
+      <p class="evline"><span class="etype">${esc(l.event.etypeLabel)}:</span> ${esc(l.event.title)}</p>
+      <div class="meta">
+        <span><span class="k">Value</span> <span class="value">${money(l.event.value)}</span></span>
+        <span><span class="k">Gov org</span> ${esc(l.event.org)}</span>
+        <span><span class="k">Sector</span> ${esc(l.event.sector)}</span>
+        <span><span class="k">Dated</span> ${esc(l.event.date)}</span>
+      </div>
+    </div>
+    <div class="col mid">
+      <p class="k-lbl">Opportunity</p>
+      <p class="opp">${esc(l.opportunity.product)} <span class="badge ${l.opportunity.tier==='inference'?'infer':'unverified'}">${esc(l.opportunity.tier)}</span></p>
+      <p class="whynow"><b>Why now:</b> ${esc(l.whyNow)}</p>
+      <p class="k-lbl">Target contact</p>
+      <p class="contact-mini">${contactMini}</p>
+      <p class="reason-mini"><b>Reason to call:</b> ${esc(l.reasonToCall)}</p>
+    </div>
+    <div class="col right">
+      <div class="ring g-${l.score.grade}" style="--p:${l.score.total}"><div class="inner"><span class="num mono">${l.score.total}</span><span class="den mono">/100</span></div></div>
+      <span class="grade g-${l.score.grade}">Grade ${l.score.grade}</span>
+      <span class="confline">confidence ${Math.round(l.score.confidence*100)}%</span>
+      <span class="statuspill s-${l.status}">${esc(STATUS[l.status])}</span>
+      <button class="view" data-id="${l.id}">View lead</button>
+    </div>
+  </article>`;
+}
+
+function render(){
+  const list = LEADS.filter(passes).sort((a,b)=>b.score.total-a.score.total);
+  el("leads").innerHTML = list.length
+    ? list.map(cardHTML).join("")
+    : `<div class="empty"><div class="big">No leads match these filters</div><div>Try lowering the minimum score or clearing a filter.</div></div>`;
+  el("shownCount").textContent = list.length;
+  el("boardNote").textContent = list.length ? `sorted by score, highest first` : "";
+}
+
+/* ---- detail panel ---- */
+function badge(tier){
+  const cls = tier==="fact"?"fact":(tier==="inference"?"infer":"unverified");
+  return `<span class="badge ${cls}">${tier.toUpperCase()}</span>`;
+}
+function detailHTML(l){
+  const ev=l.event, cp=l.company_p, op=l.opportunity, sc=l.score, c=l.contact;
+  const kv = (rows)=>`<dl class="kv">${rows.map(([k,v])=>`<dt>${esc(k)}</dt><dd>${v}</dd>`).join("")}</dl>`;
+  const evidence = l.evidence.map(e=>`<div class="ev">
+      <span class="fid">${esc(e.id)}</span>
+      <div class="body">
+        <p class="stmt">${esc(e.stmt)} ${badge(e.tier)}</p>
+        ${e.snip?`<p class="snip">“${esc(e.snip)}”</p>`:""}
+        <div class="src">${e.url?`<a href="${esc(e.url)}" target="_blank" rel="noopener">${esc(new URL(e.url).host)} ↗</a>`:`<span class="conf">no source URL</span>`}${e.c!=null?`<span class="conf">confidence ${e.c.toFixed(2)}</span>`:""}</div>
+      </div></div>`).join("");
+  const comps = sc.components.map(k=>`<div class="comp">
+      <div>${esc(k.k)}<small>${esc(k.n)}</small></div>
+      <div class="track"><div class="fill" style="width:${Math.round(k.p/k.m*100)}%"></div></div>
+      <div class="pts">${k.p}/${k.m}</div></div>`).join("");
+  const contactBlock = (c && c.verified)
+    ? kv([["Name",`${esc(c.name)} <span class="badge fact">verified</span>`],["Title",esc(c.title)],["Seniority",esc(c.seniority)],
+          ["Email",c.email?`<a href="mailto:${esc(c.email)}">${esc(c.email)}</a>`:"—"],
+          ["LinkedIn",c.linkedin?`<a href="${esc(c.linkedin)}" target="_blank" rel="noopener">profile ↗</a>`:"—"],
+          ["Source",`${esc(c.source)} · confidence ${c.confidence!=null?c.confidence.toFixed(2):"—"}`]])
+    : `<p style="font-size:13.5px;margin:0 0 6px">No verified decision-maker yet — contact discovery suggests target roles only (never a fabricated person).</p>
+       <div class="pill-list">${op.titles.map(t=>`<span class="chip">${esc(t)}</span>`).join("")}</div>
+       <p style="font-size:12px;color:var(--faint);margin:8px 0 0">Departments: ${esc(op.depts.join(", "))}</p>`;
+  const brief = l.brief.map(b=>`<div class="brief-sec"><h4>${esc(b.t)} ${b.inf?'<span class="inf">inferred</span>':''}</h4><p>${esc(b.x)}</p></div>`).join("");
+  const docs = l.sources.map(d=>`<div class="doc"><span class="dt mono">${esc(d.date)}</span><span class="kind">${esc(d.kind)}</span><a href="${esc(d.url)}" target="_blank" rel="noopener">${esc(d.title)} ↗</a></div>`).join("");
+
+  return `<div class="panel-head">
+      <div>
+        <p class="co">${esc(l.company)}</p>
+        <p class="sub">${esc(ev.etypeLabel)} · ${esc(ev.org)} · <span class="statuspill s-${l.status}" id="statusPill">${esc(STATUS[l.status])}</span></p>
+      </div>
+      <div class="score-chip"><div class="big mono g-${sc.grade}" style="color:var(--grade)">${sc.total}</div><span class="grade g-${sc.grade}">Grade ${sc.grade}</span></div>
+      <button class="closebtn" id="closePanel" aria-label="Close">✕</button>
+    </div>
+    <div class="panel-body">
+      <div class="sec"><h3><span class="step">1</span>Government event</h3>
+        ${kv([["Event",esc(ev.title)],["Type",esc(ev.etypeLabel)],["Value",`<span class="value">${money(ev.value)}</span>`],
+              ["Government org",esc(ev.org)],["Department",esc(ev.dept)],["Sector",esc(ev.sector)],
+              ["Date",esc(ev.date)],["Reference",`<span class="mono">${esc(ev.ref)}</span>`],["Location",esc(ev.location)]])}</div>
+
+      <div class="sec"><h3><span class="step">2</span>Evidence <span style="margin-left:auto;font-weight:400;text-transform:none;letter-spacing:0;color:var(--faint)">every claim links to its source</span></h3>${evidence}</div>
+
+      <div class="sec"><h3><span class="step">3</span>Company profile</h3>
+        <p style="font-size:13.5px;margin:0 0 10px">${esc(cp.desc)}</p>
+        ${kv([["Industry",esc(cp.industry)],["Headquarters",esc(cp.hq)],["Employees",esc(cp.size)],["Revenue",esc(cp.revenue)],
+              ["Website",cp.website?`<a href="${esc(cp.website)}" target="_blank" rel="noopener">${esc(cp.website.replace(/^https?:\/\//,''))} ↗</a>`:"unknown"]])}
+        ${cp.signals.length?`<div class="pill-list" style="margin-top:10px">${cp.signals.map(s=>`<a class="chip" href="${esc(s.url)}" target="_blank" rel="noopener" title="confidence ${s.c}">${esc(s.t)}: ${esc(s.x)} ↗</a>`).join("")}</div>`:""}</div>
+
+      <div class="sec"><h3><span class="step">4</span>Opportunity reasoning</h3>
+        <p style="font-size:14px;font-weight:600;margin:0 0 6px">${esc(op.product)} — ${esc(op.need)} ${badge(op.tier)}</p>
+        <p class="reasoning">${esc(op.reasoning)}</p>
+        ${op.assumptions.map(a=>`<p class="assum"><span class="tag">Assumption:</span> ${esc(a)}</p>`).join("")}
+        ${op.alternatives.map(a=>`<p class="assum alt"><span class="tag">Alternative:</span> ${esc(a)}</p>`).join("")}
+        <p style="font-size:12.5px;color:var(--faint);margin-top:8px">Timing ${esc(op.timing)}</p></div>
+
+      <div class="sec"><h3><span class="step">5</span>Score breakdown — why ${sc.total}/100</h3>
+        ${comps}
+        <div class="total-row"><span class="t">Total · grade ${sc.grade} · confidence ${Math.round(sc.confidence*100)}%</span><span class="v g-${sc.grade}" style="color:var(--grade)">${sc.total}</span></div></div>
+
+      <div class="sec"><h3><span class="step">6</span>Contact</h3>${contactBlock}</div>
+
+      <div class="sec"><h3><span class="step">7</span>AI sales brief</h3>${brief}
+        <div class="risk"><h4 style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--warn);margin:0 0 6px">Risk / uncertainty</h4><p>${esc(l.risk)}</p></div></div>
+
+      <div class="sec"><h3><span class="step">8</span>Source documents</h3>${docs}</div>
+
+      <div class="sec"><h3><span class="step">9</span>Feedback</h3>
+        <p style="font-size:12.5px;color:var(--muted);margin:0">Your feedback tunes future scoring and flags data-quality issues. No CRM is connected.</p></div>
+    </div>
+    <div class="feedback">
+      <button class="fb good" data-fb="good" data-status="qualified">👍 Good lead</button>
+      <button class="fb bad" data-fb="bad" data-status="disqualified">👎 Bad lead</button>
+      <button class="fb contacted" data-fb="contacted" data-status="contacted">📞 Contacted</button>
+      <button class="fb meeting" data-fb="meeting" data-status="meeting">📅 Meeting booked</button>
+      <button class="fb notrel" data-fb="not_relevant" data-status="disqualified">🚫 Not relevant</button>
+      <button class="fb oppty" data-fb="opportunity_created" data-status="qualified">✨ Opportunity created</button>
+    </div>`;
+}
+
+let activeId=null;
+function openPanel(id){
+  const l = LEADS.find(x=>x.id===id); if(!l) return;
+  activeId=id;
+  el("panel").innerHTML = detailHTML(l);
+  el("panel").classList.add("open"); el("panel").setAttribute("aria-hidden","false");
+  el("scrim").classList.add("open");
+  el("panel").querySelector("#closePanel").addEventListener("click", closePanel);
+  el("panel").querySelectorAll(".fb").forEach(b=>b.addEventListener("click",()=>{
+    const l2 = LEADS.find(x=>x.id===activeId);
+    l2.status = b.dataset.status;
+    feedbackLog[activeId] = b.dataset.fb;
+    const pill = el("panel").querySelector("#statusPill");
+    pill.className = "statuspill s-"+l2.status; pill.textContent = STATUS[l2.status];
+    toast(`Recorded: ${b.textContent.trim()} → status “${STATUS[l2.status]}”`);
+    render();
+  }));
+  el("panel").querySelector(".panel-body").scrollTop=0;
+}
+function closePanel(){
+  el("panel").classList.remove("open"); el("panel").setAttribute("aria-hidden","true");
+  el("scrim").classList.remove("open"); activeId=null;
+}
+
+/* ---- events ---- */
+el("leads").addEventListener("click", e=>{
+  const card = e.target.closest("[data-id]"); if(card) openPanel(card.dataset.id);
+});
+el("scrim").addEventListener("click", closePanel);
+document.addEventListener("keydown", e=>{ if(e.key==="Escape") closePanel(); });
+
+el("fScore").addEventListener("input", e=>{ state.score=+e.target.value; el("fScoreVal").textContent=e.target.value; render(); });
+el("fSector").addEventListener("change", e=>{ state.sector=e.target.value; render(); });
+el("fProduct").addEventListener("change", e=>{ state.product=e.target.value; render(); });
+el("fEvent").addEventListener("change", e=>{ state.event=e.target.value; render(); });
+el("fDate").addEventListener("change", e=>{ state.date=+e.target.value; render(); });
+el("fOrg").addEventListener("change", e=>{ state.org=e.target.value; render(); });
+el("fStatus").addEventListener("change", e=>{ state.status=e.target.value; render(); });
+el("fCompany").addEventListener("input", e=>{ state.company=e.target.value; render(); });
+el("resetBtn").addEventListener("click", ()=>{
+  Object.assign(state,{score:0,sector:"",product:"",event:"",date:0,org:"",status:"",company:""});
+  ["fSector","fProduct","fEvent","fOrg","fStatus"].forEach(id=>el(id).value="");
+  el("fDate").value="0"; el("fScore").value=0; el("fScoreVal").textContent="0"; el("fCompany").value=""; render();
+});
+
+let toastT;
+function toast(msg){ const t=el("toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove("show"),2600); }
+
+/* theme toggle */
+el("themeToggle").addEventListener("click", ()=>{
+  const root=document.documentElement;
+  const cur = root.getAttribute("data-theme");
+  const sysDark = matchMedia("(prefers-color-scheme:dark)").matches;
+  const next = cur ? (cur==="dark"?"light":"dark") : (sysDark?"light":"dark");
+  root.setAttribute("data-theme", next);
+});
+
+render();
+</script>
