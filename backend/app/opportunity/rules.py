@@ -50,7 +50,12 @@ def _sector_ok(event: EventInput, company: CompanyProfileInput, target: TargetPr
     if not rule.relevant_sectors:
         return True  # sector-agnostic rule (e.g. large-project workforce needs)
     pool = [s.lower() for s in rule.relevant_sectors]
-    candidates = [event.sector, company.industry, *target.sectors]
+    # Relevance is about THIS event/company's sector vs the product's sectors.
+    # The customer's target-sector list is their ICP filter, not evidence that a
+    # given company is in a relevant sector — including it here caused
+    # out-of-sector companies (e.g. FMCG) to match products whose sectors merely
+    # overlapped the customer's broad targets.
+    candidates = [event.sector, company.industry]
     for c in candidates:
         if c and any(rs in c.lower() or c.lower() in rs for rs in pool):
             return True
