@@ -35,6 +35,9 @@ class Settings(BaseSettings):
     api_keys: dict[str, str] = {}
     cors_origins: list[str] = []
     rate_limit_per_minute: int = 120
+    # When true, the API serves live data from Postgres via SqlAlchemyLeadRepository;
+    # otherwise it uses the in-memory demo repository.
+    use_db_repository: bool = False
 
     # --- secrets (never logged; SecretStr redacts on repr) ---
     anthropic_api_key: SecretStr | None = None

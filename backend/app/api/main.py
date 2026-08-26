@@ -24,6 +24,10 @@ def create_app(settings: Settings | None = None, repository: LeadRepository | No
     app = FastAPI(title="GovIntel Read API", version="0.1.0")
     app.state.settings = settings
     app.state.rate_limiter = RateLimiter(settings.rate_limit_per_minute)
+    if repository is None and settings.use_db_repository:
+        from app.api.db_repository import SqlAlchemyLeadRepository
+        from app.db.session import SessionLocal
+        repository = SqlAlchemyLeadRepository(SessionLocal)
     app.state.repository = repository or InMemoryLeadRepository()
 
     app.add_middleware(RequestContextMiddleware)

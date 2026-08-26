@@ -48,10 +48,18 @@ request logging with a request id and **no bodies/PII/secrets**, and a generic
 
 ## Data source
 
-The app depends on a `LeadRepository` (`app/api/repository.py`). `InMemoryLeadRepository`
-powers the demo/tests; a SQLAlchemy-backed implementation reads the same shape
-from `government_events` / `companies` / `opportunities` / `lead_scores` /
-`sales_briefs` / `contacts`.
+The app depends on a `LeadRepository` (`app/api/repository.py`).
+`InMemoryLeadRepository` powers the demo/tests; `SqlAlchemyLeadRepository`
+(`app/api/db_repository.py`) serves **live data** — anchored on `opportunities`,
+joining `government_events` (+ `event_sources`), `companies` (+ current
+`company_enrichment` and `contacts`), the current `lead_scores` row and the latest
+`sales_briefs` row, and writing feedback to `sales_feedback`.
+
+Set `USE_DB_REPOSITORY=true` (with a live `DATABASE_URL`) and the API serves from
+Postgres — no code change. Fidelity notes: `score_components` come from
+`lead_scores.factors`; the structured brief is parsed back from the rendered
+`sales_briefs.content`; opportunity assumptions/alternatives/timing/tier are
+reconstructed from the Product Opportunity Knowledge Base by product category.
 
 ## Tests
 
