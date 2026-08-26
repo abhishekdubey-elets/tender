@@ -57,6 +57,8 @@ async def _lifespan(app: FastAPI):
     if settings and settings.use_mongo and settings.mongodb_uri:
         from app.api.mongo_repository import mongo_change_listener
         tasks.append(asyncio.create_task(mongo_change_listener(app)))
+        if settings.crawl_enabled:
+            tasks.append(asyncio.create_task(_crawl_scheduler(app)))
     elif settings and settings.use_db_repository:
         tasks.append(asyncio.create_task(db_listener(app)))
         if settings.crawl_enabled:

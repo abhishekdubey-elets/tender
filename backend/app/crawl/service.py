@@ -1,6 +1,11 @@
-"""Crawl service internals: fetch, rule-extract, persist, run_crawl."""
+"""Crawl service internals: fetch, rule-extract, persist, run_crawl.
+
+Writes to Postgres by default, or to MongoDB (as denormalized lead documents) when
+USE_MONGO is set — so the crawl feeds whichever store the API serves.
+"""
 from __future__ import annotations
 
+import hashlib
 import html
 import re
 import uuid
@@ -316,8 +321,95 @@ def persist_leads(leads: list[dict], session_factory=SessionLocal) -> list[str]:
     return written
 
 
+# --------------------------------------------------------------------------- #
+# MongoDB persistence (Phase 2): build + upsert denormalized lead documents
+# --------------------------------------------------------------------------- #
+def _lead_id(org: str, normalized_company: str, product_cat: str) -> str:
+    key = f"{org}:{normalized_company}:{product_cat}"
+    return "news-" + hashlib.sha1(key.encode()).hexdigest()[:24]
+
+
+def build_lead_document(lead_id: str, org: str, lead: dict, product_name: str,
+                        engine: "LeadScoringEngine", today: date) -> dict:
+    """Construct the summary+detail document the read API serves (schemas.LeadDetail)."""
+    company = html.unescape((lead.get("company") or "").strip())
+    vertical = lead.get("vertical") or ""
+    amount = _amount_to_inr(lead.get("amount"))
+    what = html.unescape(lead.get("what_won") or "government award")
+    buyer = html.unescape(lead.get("government_buyer") or "Government of India")
+    reason = html.unescape(lead.get("reason_to_call") or "")
+    conf = float(lead.get("confidence") or 0.5)
+    source = lead.get("source") or "Google News"
+    is_grant = bool(re.search(r"\bPLI\b|incentive", what, re.I))
+    etype = "grant" if is_grant else "award"
+    type_label = "Incentive / grant" if is_grant else "Contract award"
+
+    si = ScoringInput(
+        event_type=etype, event_value=amount, event_date=None, event_sector=vertical,
+        company_industry=vertical, company_employee_range=None, target_sectors=ICP_SECTORS,
+        ideal_employee_ranges=None, opportunity_confidence=conf,
+        evidence_confidences=[conf * NEWS_AUTHORITY], num_contacts=0, best_contact_seniority=None,
+    )
+    score = engine.score(si, as_of=today)
+    components = [
+        {"key": c.get("key"), "points": int(c.get("points") or 0),
+         "max_points": int(c.get("max_points") or 0), "note": c.get("explanation")}
+        for c in (score.to_factors().get("components", []))
+    ]
+    return {
+        "id": lead_id, "company": company, "status": "new",
+        "event": {"type": etype, "type_label": type_label, "title": what[:300], "value": amount,
+                  "org": buyer, "department": None, "sector": vertical, "date": None,
+                  "reference": None, "location": None},
+        "opportunity": product_name, "opportunity_tier": "inference",
+        "score": score.total, "grade": score.grade, "confidence": conf,
+        "why_now": f"Reported by {source}. Award date not stated.",
+        "reason_to_call": reason, "target_contact": "decision-maker",
+        "company_profile": {}, "opportunity_detail": {},
+        "evidence": [{"id": "n1", "tier": "inference", "statement": f"News: {source} — {what}",
+                      "snippet": None, "source_url": None, "confidence": conf}],
+        "score_components": components, "contact": None,
+        "brief": [
+            {"key": "trigger", "title": "Trigger", "is_inference": False,
+             "text": f"{company} reportedly won {lead.get('amount') or 'an award'} from {buyer} ({what})."},
+            {"key": "reason_to_call", "title": "Reason to call", "is_inference": True, "text": reason},
+            {"key": "source", "title": "Source", "is_inference": False,
+             "text": f"News: {source}. Award date not stated — undated. News-sourced "
+                     f"(authority {NEWS_AUTHORITY:.2f}) — cross-check against the official award document."},
+        ],
+        "risk": "News-sourced and unverified; cross-check against the official award document before outreach.",
+        "sources": [],
+    }
+
+
+def persist_leads_mongo(leads: list[dict], repo, org: str) -> list[str]:
+    engine = LeadScoringEngine()
+    today = datetime.now(timezone.utc).date()
+    written: list[str] = []
+    for lead in leads:
+        company = html.unescape((lead.get("company") or "").strip())
+        vertical = lead.get("vertical") or ""
+        if not company or vertical not in VERTICAL_PRODUCT:
+            continue
+        cat = VERTICAL_PRODUCT[vertical]
+        product_name, _pid = PRODUCTS[cat]
+        lead_id = _lead_id(org, company.lower(), cat)
+        # Idempotent by company+product across id schemes (exported UUIDs and
+        # crawl news-ids), so a company already on the board is never duplicated.
+        if repo.leads.find_one(
+            {"organization_id": org, "company": company, "opportunity": product_name}, {"_id": 1}
+        ):
+            continue
+        doc = build_lead_document(lead_id, org, lead, product_name, engine, today)
+        repo.upsert_lead(org, doc)
+        written.append(company)
+    return written
+
+
 def run_crawl(per_vertical: int = 10, session_factory=SessionLocal) -> CrawlReport:
     import time
+
+    from app.config import get_settings
 
     now = datetime.now(timezone.utc)
     report = CrawlReport(started_at=now.isoformat())
@@ -326,7 +418,15 @@ def run_crawl(per_vertical: int = 10, session_factory=SessionLocal) -> CrawlRepo
     report.fetched = sum(len(v) for v in by_sector.values())
     leads = extract_rule_based(by_sector)
     report.extracted = len(leads)
-    written = persist_leads(leads, session_factory=session_factory)
+
+    settings = get_settings()
+    if settings.use_mongo and settings.mongodb_uri:
+        from app.api.mongo_repository import MongoLeadRepository
+        repo = MongoLeadRepository(settings.mongodb_uri.get_secret_value(), settings.mongodb_db)
+        written = persist_leads_mongo(leads, repo, org=str(ORG_ID))
+    else:
+        written = persist_leads(leads, session_factory=session_factory)
+
     report.persisted = len(written)
     report.companies = written
     report.duration_ms = (time.perf_counter() - t0) * 1000
