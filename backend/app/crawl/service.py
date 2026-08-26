@@ -242,7 +242,11 @@ def _persist_lead(session, lead: dict, now: datetime, today: date) -> str | None
         return None  # idempotent: one news opportunity per company+product
 
     amount = _amount_to_inr(lead.get("amount"))
-    ev_date = _to_date(lead.get("date")) or today
+    # The event date is the *award* date. A news headline rarely states it — the RSS
+    # publish date is only a proxy — so news leads are treated as undated (they sort
+    # to the bottom); the publish date is kept in attributes for reference.
+    news_date = _to_date(lead.get("date"))
+    ev_date = _to_date(lead.get("award_date"))  # None unless a real award date was found
     what = lead.get("what_won") or "government award"
     buyer = lead.get("government_buyer") or "Government of India"
     etype = EventType.grant if re.search(r"\bPLI\b|incentive", what, re.I) else EventType.award
@@ -254,6 +258,7 @@ def _persist_lead(session, lead: dict, now: datetime, today: date) -> str | None
         company_id=company.id, company_resolution_confidence=conf, value_amount=amount, currency="INR",
         jurisdiction=Jurisdiction.national, event_date=ev_date, confidence=conf,
         attributes={"sector": vertical, "source_kind": "news", "news_source": source,
+                    "news_date": news_date.isoformat() if news_date else None,
                     "source_authority": NEWS_AUTHORITY},
     )
     session.add(ge)
@@ -282,8 +287,10 @@ def _persist_lead(session, lead: dict, now: datetime, today: date) -> str | None
     brief = "\n\n".join([
         f"## Trigger\n{company_name} reportedly won {lead.get('amount') or 'an award'} from {buyer} ({what}).",
         f"## Reason to call\n{lead.get('reason_to_call') or ''}",
-        f"## Source\nNews: {source} ({ev_date.isoformat()}). **News-sourced (authority "
-        f"{NEWS_AUTHORITY:.2f}) — cross-check against the official award document before outreach.**",
+        f"## Source\nNews: {source}"
+        + (f" (published {news_date.isoformat()})" if news_date else "")
+        + f". Award date not stated — undated. **News-sourced (authority {NEWS_AUTHORITY:.2f}) — "
+          f"cross-check against the official award document before outreach.**",
         f"## Confidence\nLead score {score.total}/100 (grade {score.grade}); news confidence {int(conf*100)}%.",
     ])
     session.add(SalesBrief(opportunity_id=opp.id, content=brief, format=BriefFormat.markdown,
