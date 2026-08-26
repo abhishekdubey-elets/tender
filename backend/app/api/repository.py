@@ -71,7 +71,8 @@ class InMemoryLeadRepository:
                 if age is None or age > dd:
                     continue
             out.append(_summary(l))
-        out.sort(key=lambda x: x["score"], reverse=True)
+        # Newest first (by government-event date); score breaks ties.
+        out.sort(key=lambda x: (x.get("event", {}).get("date") or "", x["score"]), reverse=True)
         return out
 
     def get_lead(self, organization_id: str, lead_id: str) -> dict | None:

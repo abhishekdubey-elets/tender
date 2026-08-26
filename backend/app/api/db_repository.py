@@ -301,7 +301,9 @@ class SqlAlchemyLeadRepository:
             opps = session.scalars(stmt).all()
             leads = [build_summary(o, self._kb) for o in opps]
             leads = [l for l in leads if _matches(l, filters)]
-            leads.sort(key=lambda x: x["score"], reverse=True)
+            # Newest first (by government-event date); score breaks ties. Undated
+            # leads sort last.
+            leads.sort(key=lambda x: (x.get("event", {}).get("date") or "", x["score"]), reverse=True)
             return leads
 
     def get_lead(self, organization_id: str, lead_id: str) -> dict | None:

@@ -334,7 +334,7 @@ export default function Page() {
 
       <div className="board-label">
         <h3>Leads</h3>
-        <span>{loading ? "loading…" : `${leads.length} shown · sorted by score`}</span>
+        <span>{loading ? "loading…" : `${leads.length} shown · newest first`}</span>
       </div>
 
       {loading ? (
