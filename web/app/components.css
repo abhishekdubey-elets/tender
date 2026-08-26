@@ -73,6 +73,17 @@
 }
 .refresh-pill.reconnecting .pulse { animation: blink 1s ease-in-out infinite; }
 @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+.crawl-btn {
+  display: inline-flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 500;
+  color: var(--text); padding: 7px 13px; border-radius: 999px;
+  background: var(--surface-2); border: 1px solid var(--border);
+  cursor: pointer; transition: border-color 0.15s ease, color 0.15s ease;
+}
+.crawl-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.crawl-btn:disabled { opacity: 0.65; cursor: default; }
+.crawl-btn .spin { animation: spin 0.9s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
 @keyframes ping { 0% { transform: scale(1); opacity: 0.45; } 70%, 100% { transform: scale(2.6); opacity: 0; } }
 
 .content { padding: 26px; max-width: 1240px; width: 100%; margin: 0 auto; }

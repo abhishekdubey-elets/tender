@@ -15,24 +15,52 @@ from app.api.logging import (
     logger,
 )
 from app.api.repository import InMemoryLeadRepository, LeadRepository
+from app.api.routers import crawl as crawl_router
 from app.api.routers import leads
+from app.api.routers.crawl import run_crawl_guarded
 from app.api.security import RateLimiter
 from app.api.ws import ConnectionManager, db_listener
 from app.api.ws import router as ws_router
 from app.config import Settings, get_settings
 
 
+async def _crawl_scheduler(app: FastAPI) -> None:
+    """Run the headless crawl once every crawl_interval_hours."""
+    settings = app.state.settings
+    interval = max(1, settings.crawl_interval_hours) * 3600
+    try:
+        if settings.crawl_on_start:
+            await _safe_crawl(app)
+        while True:
+            await asyncio.sleep(interval)
+            await _safe_crawl(app)
+    except asyncio.CancelledError:
+        raise
+
+
+async def _safe_crawl(app: FastAPI) -> None:
+    try:
+        report = await run_crawl_guarded(app)
+        if report is not None:
+            logger.info('{"event": "scheduled_crawl", "persisted": %d, "fetched": %d}',
+                        report.get("persisted", 0), report.get("fetched", 0))
+    except Exception as exc:  # noqa: BLE001 - a bad crawl must not kill the scheduler
+        logger.warning('{"event": "scheduled_crawl_error", "detail": "%s"}', exc)
+
+
 @asynccontextmanager
 async def _lifespan(app: FastAPI):
-    # Start the Postgres LISTEN/NOTIFY watcher only when a real DB is configured;
-    # in-memory mode (tests, local) has no notify channel to listen on.
-    task = None
+    # Start the Postgres LISTEN/NOTIFY watcher and the crawl scheduler only when a
+    # real DB is configured; in-memory mode (tests, local) has neither.
+    tasks = []
     if getattr(app.state, "settings", None) and app.state.settings.use_db_repository:
-        task = asyncio.create_task(db_listener(app))
+        tasks.append(asyncio.create_task(db_listener(app)))
+        if app.state.settings.crawl_enabled:
+            tasks.append(asyncio.create_task(_crawl_scheduler(app)))
     try:
         yield
     finally:
-        if task:
+        for task in tasks:
             task.cancel()
             try:
                 await task
@@ -50,6 +78,7 @@ def create_app(settings: Settings | None = None, repository: LeadRepository | No
     app = FastAPI(title="GovIntel Read API", version="0.1.0", lifespan=lifespan)
     app.state.settings = settings
     app.state.ws_manager = ConnectionManager()
+    app.state.crawl_lock = asyncio.Lock()
     app.state.rate_limiter = RateLimiter(settings.rate_limit_per_minute)
     if repository is None and settings.use_db_repository:
         from app.api.db_repository import SqlAlchemyLeadRepository
@@ -88,6 +117,7 @@ def create_app(settings: Settings | None = None, repository: LeadRepository | No
 
     app.include_router(leads.router)
     app.include_router(ws_router)
+    app.include_router(crawl_router.router)
 
     # Serve the dashboard (same-origin) if the frontend directory is present.
     import os

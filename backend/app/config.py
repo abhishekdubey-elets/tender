@@ -39,6 +39,11 @@ class Settings(BaseSettings):
     # otherwise it uses the in-memory demo repository.
     use_db_repository: bool = False
 
+    # --- automated crawl (Google News -> rule-extracted news leads) ---
+    crawl_enabled: bool = True       # run the background scheduler
+    crawl_interval_hours: int = 24   # once per day by default
+    crawl_on_start: bool = False     # also crawl once at startup
+
     # --- secrets (never logged; SecretStr redacts on repr) ---
     anthropic_api_key: SecretStr | None = None
     voyage_api_key: SecretStr | None = None

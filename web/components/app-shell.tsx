@@ -1,9 +1,31 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { BarChart3, Building2, Radar, Search, Settings, Target } from "lucide-react";
+import { BarChart3, Building2, RefreshCw, Radar, Search, Settings, Target } from "lucide-react";
 import { useEffect, useState } from "react";
 import { ThemeToggle } from "./ui";
+
+function CrawlButton({ onCrawl }: { onCrawl: () => Promise<void> }) {
+  const [busy, setBusy] = useState(false);
+  return (
+    <button
+      className="crawl-btn"
+      disabled={busy}
+      onClick={async () => {
+        setBusy(true);
+        try {
+          await onCrawl();
+        } finally {
+          setBusy(false);
+        }
+      }}
+      title="Fetch fresh government-money news now (auto-runs every 24h)"
+    >
+      <RefreshCw size={14} className={busy ? "spin" : ""} />
+      {busy ? "Crawling…" : "Crawl now"}
+    </button>
+  );
+}
 
 const NAV = [
   { icon: Target, label: "Leads", active: true },
@@ -58,6 +80,7 @@ export function AppShell({
   autoRefresh,
   live,
   onToggleAutoRefresh,
+  onCrawl,
   refreshedAt,
   children,
 }: {
@@ -67,6 +90,7 @@ export function AppShell({
   autoRefresh: boolean;
   live: boolean;
   onToggleAutoRefresh: () => void;
+  onCrawl: () => Promise<void>;
   refreshedAt: number | null;
   children: React.ReactNode;
 }) {
@@ -140,6 +164,7 @@ export function AppShell({
             <span className={`dot ${online ? "" : "err"}`} />
             {online ? "Postgres" : "API offline"}
           </motion.div>
+          <CrawlButton onCrawl={onCrawl} />
           <RefreshPill autoRefresh={autoRefresh} live={live} onToggle={onToggleAutoRefresh} refreshedAt={refreshedAt} />
           <ThemeToggle />
         </div>

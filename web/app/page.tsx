@@ -7,7 +7,7 @@ import { AppShell } from "@/components/app-shell";
 import { LeadCard } from "@/components/lead-card";
 import { LeadDrawer } from "@/components/lead-drawer";
 import { CountUp, Skeleton } from "@/components/ui";
-import { getLead, getLeads, sendFeedback, type Filters } from "@/lib/api";
+import { getLead, getLeads, sendFeedback, triggerCrawl, type Filters } from "@/lib/api";
 import type { LeadDetail, LeadSummary } from "@/lib/types";
 
 type Options = { sectors: string[]; products: string[]; eventTypes: string[]; orgs: string[] };
@@ -214,6 +214,21 @@ export default function Page() {
   }
   const close = () => setSelectedId(null);
 
+  async function crawl() {
+    setToast("Crawling government-money news…");
+    try {
+      const r = await triggerCrawl();
+      await silentRefresh();
+      setToast(
+        r.persisted > 0
+          ? `Crawl done — ${r.persisted} new lead${r.persisted === 1 ? "" : "s"} (${r.fetched} headlines scanned)`
+          : `Crawl done — no new leads (${r.fetched} headlines scanned)`,
+      );
+    } catch (e) {
+      setToast(String(e).includes("409") ? "A crawl is already running" : "Crawl failed");
+    }
+  }
+
   async function feedback(id: string, eventType: string) {
     try {
       const { status } = await sendFeedback(id, eventType);
@@ -257,6 +272,7 @@ export default function Page() {
       autoRefresh={autoRefresh}
       live={live}
       onToggleAutoRefresh={() => setAutoRefresh((v) => !v)}
+      onCrawl={crawl}
       refreshedAt={refreshedAt}
     >
       <motion.div className="page-head" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>

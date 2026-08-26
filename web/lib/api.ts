@@ -44,6 +44,18 @@ export async function sendFeedback(id: string, eventType: string): Promise<{ sta
   );
 }
 
+export type CrawlReport = {
+  fetched: number;
+  extracted: number;
+  persisted: number;
+  companies: string[];
+  duration_ms: number;
+};
+
+export async function triggerCrawl(): Promise<CrawlReport> {
+  return j(await fetch(`/api/crawl`, { method: "POST" }));
+}
+
 export const money = (v: number | null | undefined): string =>
   v == null ? "—" : v >= 1e7 ? `₹${(v / 1e7).toFixed(v >= 1e8 ? 0 : 1)} cr` : `₹${Number(v).toLocaleString("en-IN")}`;
 

@@ -27,6 +27,25 @@ tender notice before outreach.**
     WebSocket push; idempotent — one lead per company+product)
 ```
 
+## Automated / headless path (no model)
+
+For the **24-hour scheduler** and the dashboard **"Crawl now"** button, the
+extraction can't call the workflow (no interactive model), so it uses a
+conservative **rule extractor** (`app/crawl/service.py`): keep only headlines with
+an explicit ₹ amount + a government counterparty, hard-excluding stock/opinion/
+defence/foreign noise. Lower precision than the multi-agent pass (verticals can be
+mis-tagged), so these land at confidence 0.5, news-flagged.
+
+```
+python -m scripts.news_leads crawl          # one headless fetch→extract→persist
+POST /api/crawl                             # manual trigger (dashboard button)
+```
+
+- **Scheduler**: runs every `crawl_interval_hours` (default 24) when
+  `use_db_repository` and `crawl_enabled`; see `app/config.py`. A per-app lock
+  stops the button and the scheduler from overlapping.
+- New leads fire the LISTEN/NOTIFY trigger → the dashboard updates over WebSocket.
+
 ## Notes
 
 - **Sources**: `GoogleNewsRSSAdapter` (per-query RSS). Queries per vertical live in
