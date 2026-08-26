@@ -63,5 +63,8 @@ def session(engine: Engine) -> Iterator[Session]:
         yield sess
     finally:
         sess.close()
-        trans.rollback()
+        # A test that triggered an IntegrityError may have already invalidated the
+        # transaction; only roll back if it is still active.
+        if trans.is_active:
+            trans.rollback()
         connection.close()
