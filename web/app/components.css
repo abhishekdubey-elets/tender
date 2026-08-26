@@ -64,12 +64,15 @@
   font-variant-numeric: tabular-nums; transition: color .15s, border-color .15s;
 }
 .refresh-pill:hover { border-color: var(--border-strong); }
-.refresh-pill.on { color: var(--good); border-color: color-mix(in srgb, var(--good) 35%, transparent); }
+.refresh-pill.live { color: var(--good); border-color: color-mix(in srgb, var(--good) 35%, transparent); }
+.refresh-pill.reconnecting { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 35%, transparent); }
 .refresh-pill .pulse { width: 8px; height: 8px; border-radius: 50%; background: currentColor; position: relative; }
-.refresh-pill.on .pulse::after {
+.refresh-pill.live .pulse::after {
   content: ""; position: absolute; inset: -4px; border-radius: 50%; background: currentColor;
   animation: ping 1.7s cubic-bezier(0, 0, 0.2, 1) infinite;
 }
+.refresh-pill.reconnecting .pulse { animation: blink 1s ease-in-out infinite; }
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
 @keyframes ping { 0% { transform: scale(1); opacity: 0.45; } 70%, 100% { transform: scale(2.6); opacity: 0; } }
 
 .content { padding: 26px; max-width: 1240px; width: 100%; margin: 0 auto; }

@@ -28,7 +28,7 @@ from typing import Any, Callable
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
-from app.db.enums import OpportunityStatus
+from app.db.enums import OpportunityStatus, OpportunityType
 from app.db.models import (
     Company,
     Contact,
@@ -200,8 +200,19 @@ def build_summary(opp: Opportunity, kb: KnowledgeBase) -> dict:
         days = (date.today() - opp.event.event_date).days
     why_now = (f"{ev.get('type_label', 'Event')} dated {ev.get('date')}"
                + (f" ({days} days ago)" if days is not None else "") + ".")
-    reason = (f"{opp.company.canonical_name if opp.company else 'The company'} may have a "
-              f"{opp.title.lower()} after this {ev.get('type_label', 'event').lower()} — a fit for {product}.")
+    company_name = opp.company.canonical_name if opp.company else "The company"
+    sector = ev.get("sector")
+    sponsorship_like = opp.opportunity_type in (
+        OpportunityType.sponsorship, OpportunityType.event_participation, OpportunityType.advertising,
+    )
+    if sponsorship_like:
+        event_name = product.split(" — ")[0].split(" - ")[0]  # drop the "— Sponsorship" suffix
+        won = (f"just won government business in {sector}" if sector else "just won government business")
+        reason = (f"{company_name} {won} — congratulate them on the "
+                  f"{ev.get('type_label', 'award').lower()} and invite them to sponsor {event_name}.")
+    else:
+        reason = (f"{company_name} may have a "
+                  f"{opp.title.lower()} after this {ev.get('type_label', 'event').lower()} — a fit for {product}.")
     target = (contact.full_name if contact and contact.is_verified
               else (detail["job_titles"][0] if detail["job_titles"] else "decision-maker"))
     return {

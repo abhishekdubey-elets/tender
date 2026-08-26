@@ -52,66 +52,138 @@ ORG_ID = uuid.UUID("11111111-1111-1111-1111-111111111111")
 TODAY = date(2026, 8, 26)
 NOW = datetime(2026, 8, 26, tzinfo=timezone.utc)
 
-# (product category, human name) -> fixed product id
+# Elets' government-event verticals — the ICP. A company that just won government
+# money in one of these sectors is a sponsorship prospect for the matching summit.
+ICP_SECTORS = ["e-Governance", "Digital Learning", "Pharma", "eHealth", "Banking", "Finance"]
+
+# (product category, human name) -> fixed product id. Products are Elets event
+# sponsorship offerings, one per vertical.
 PRODUCTS = {
-    "cybersecurity": ("Cybersecurity Services", uuid.UUID("22222222-0000-0000-0000-000000000001")),
-    "cloud_infrastructure": ("Cloud & Infrastructure", uuid.UUID("22222222-0000-0000-0000-000000000002")),
+    "egov": ("Elets eGov Summit — Sponsorship", uuid.UUID("22222222-0000-0000-0000-000000000001")),
+    "digital_learning": ("Elets World Education Summit — Sponsorship", uuid.UUID("22222222-0000-0000-0000-000000000002")),
+    "pharma": ("Elets Pharma Innovation Summit — Sponsorship", uuid.UUID("22222222-0000-0000-0000-000000000003")),
+    "ehealth": ("Elets eHealth Summit — Sponsorship", uuid.UUID("22222222-0000-0000-0000-000000000004")),
+    "bfsi": ("Elets BFSI Leadership Summit — Sponsorship", uuid.UUID("22222222-0000-0000-0000-000000000005")),
 }
 
 LEADS = [
     dict(
-        ref="MoD/DDP/2026/AW/1183", source="pib", src_url="https://pib.gov.in/pr/1183",
+        ref="MeitY/NeGD/2026/AW/3312", source="pib", src_url="https://pib.gov.in/pr/3312",
         event_type=EventType.award, etype_label="Contract award",
-        title="Border surveillance & sensor systems", value=500_000_000, buyer="Ministry of Defence",
-        department="Dept. of Defence Production", sector="Defence", event_date=date(2026, 8, 18),
-        location="New Delhi", snippet="MoD awards Rs 50 crore surveillance contract to Acme Defence Systems.",
-        company="Acme Defence Systems Pvt Ltd", cin="U74999DL2019PTC001183", industry="Defence & IT",
-        hq_city="Pune", hq_state="Maharashtra", size="1001-5000", website="https://acmedefence.example",
-        revenue=12_000_000_000, employees=2200, description="Designs surveillance, radar and electro-optic systems.",
-        product="cybersecurity", opp_type=OpportunityType.other,
-        need="Cybersecurity & data-protection need", tier="inference",
-        reasoning="Acme won a Rs 50 crore border-surveillance contract handling classified sensor data; under the "
-                  "Cybersecurity Services rule this suggests a data-protection and compliance need.",
-        opp_conf=0.82, target_sectors=["Defence"], evidence_conf=[0.9, 0.9],
-        contact=("Priya Rao", "Chief Information Security Officer", Seniority.c_level,
-                 "priya.rao@acmedefence.example", "https://linkedin.example/in/priyarao"),
-        timing="0-6 months",
+        title="National citizen-services platform (DigiLocker integration)", value=800_000_000,
+        buyer="Ministry of Electronics & IT", department="National e-Governance Division", sector="e-Governance",
+        event_date=date(2026, 8, 19), location="New Delhi",
+        snippet="MeitY awards Rs 80 crore citizen-services platform contract to GovStack Technologies.",
+        company="GovStack Technologies Pvt Ltd", cin="U72200UP2016PTC331200", industry="e-Governance IT",
+        hq_city="Noida", hq_state="Uttar Pradesh", size="501-1000", website="https://govstack.example",
+        revenue=4_500_000_000, employees=900, description="Builds citizen-service portals and digital public infrastructure for state and central government.",
+        product="egov",
+        need="Sponsor Elets eGov Summit 2026", tier="inference",
+        reasoning="GovStack just won a marquee Rs 80 crore central e-governance platform contract, so it has fresh "
+                  "budget and a strong incentive to showcase the win to the state and central buyers who attend the "
+                  "eGov Summit — a high-fit sponsorship prospect.",
+        opp_conf=0.86, target_sectors=ICP_SECTORS, evidence_conf=[0.9, 0.9],
+        contact=("Rahul Verma", "VP – Government Business", Seniority.vp,
+                 "rahul.verma@govstack.example", "https://linkedin.example/in/rahulverma"),
+        timing="0-3 months",
     ),
     dict(
-        ref="PSCDCL/ICCC/2026/WO/44", source="eprocure", src_url="https://eprocure.gov.in/award/psc44",
+        ref="MoE/SS/2026/WO/778", source="eprocure", src_url="https://eprocure.gov.in/award/ss778",
         event_type=EventType.work_order, etype_label="Work order",
-        title="Integrated Command & Control Centre (ICCC)", value=1_200_000_000,
-        buyer="Pune Smart City Development Corp.", department="Smart Cities Mission", sector="Smart Cities",
-        event_date=date(2026, 8, 5), location="Pune, Maharashtra",
-        snippet="PSCDCL issues Rs 120 crore ICCC work order to Metro Infratech.",
-        company="Metro Infratech Pvt Ltd", cin="U72200KA2018PTC004400", industry="IT & Urban Infrastructure",
-        hq_city="Bengaluru", hq_state="Karnataka", size="501-1000", website="https://metroinfratech.example",
-        revenue=6_400_000_000, employees=800, description="Systems integrator for smart-city command centres and IoT.",
-        product="cloud_infrastructure", opp_type=OpportunityType.other,
-        need="Cloud/compute/networking scale-up", tier="inference",
-        reasoning="Metro Infratech won a Rs 120 crore ICCC work order requiring large-scale data ingestion and "
-                  "video analytics; under the Cloud & Infrastructure rule this implies a cloud/compute scale-up.",
-        opp_conf=0.78, target_sectors=["Smart Cities"], evidence_conf=[0.9],
-        contact=("Arjun Mehta", "Chief Technology Officer", Seniority.c_level,
-                 "arjun.mehta@metroinfratech.example", "https://linkedin.example/in/arjunmehta"),
-        timing="0-9 months",
+        title="Smart classrooms & LMS rollout (Samagra Shiksha)", value=450_000_000,
+        buyer="Dept. of School Education (Rajasthan)", department="Samagra Shiksha Abhiyan", sector="Digital Learning",
+        event_date=date(2026, 8, 12), location="Jaipur, Rajasthan",
+        snippet="Rajasthan awards Rs 45 crore smart-classroom and LMS contract to EduSphere Learning.",
+        company="EduSphere Learning Pvt Ltd", cin="U80904RJ2015PTC047780", industry="EdTech",
+        hq_city="Jaipur", hq_state="Rajasthan", size="201-500", website="https://edusphere.example",
+        revenue=1_600_000_000, employees=420, description="Digital classroom, LMS and assessment platforms for government schools.",
+        product="digital_learning",
+        need="Sponsor Elets World Education Summit 2026", tier="inference",
+        reasoning="EduSphere just won a Rs 45 crore state education rollout; with a proven government reference it is "
+                  "well placed to win more states and has a clear reason to be visible to education secretaries at the "
+                  "World Education Summit.",
+        opp_conf=0.80, target_sectors=ICP_SECTORS, evidence_conf=[0.9],
+        contact=("Sneha Kulkarni", "Chief Executive Officer", Seniority.c_level,
+                 "sneha.kulkarni@edusphere.example", "https://linkedin.example/in/snehakulkarni"),
+        timing="0-4 months",
+    ),
+    dict(
+        ref="DoP/PLI/2026/GR/091", source="pib", src_url="https://pib.gov.in/pr/pli091",
+        event_type=EventType.grant, etype_label="Incentive / grant",
+        title="PLI incentive for domestic API manufacturing", value=1_200_000_000,
+        buyer="Dept. of Pharmaceuticals", department="PLI Scheme (Bulk Drugs)", sector="Pharma",
+        event_date=date(2026, 8, 3), location="New Delhi",
+        snippet="Dept. of Pharmaceuticals sanctions Rs 120 crore PLI incentive to Meditrust Pharma.",
+        company="Meditrust Pharma Ltd", cin="L24239MH2011PLC090910", industry="Pharmaceuticals",
+        hq_city="Mumbai", hq_state="Maharashtra", size="1001-5000", website="https://meditrust.example",
+        revenue=9_800_000_000, employees=2600, description="Manufactures active pharmaceutical ingredients and generic formulations.",
+        product="pharma",
+        need="Sponsor Elets Pharma Innovation Summit 2026", tier="inference",
+        reasoning="Meditrust just secured a Rs 120 crore PLI incentive, signalling a large capacity expansion and a "
+                  "public-affairs agenda; sponsoring the Pharma Innovation Summit puts it in front of the health and "
+                  "pharma policymakers shaping the scheme.",
+        opp_conf=0.74, target_sectors=ICP_SECTORS, evidence_conf=[0.85],
+        contact=None, timing="0-6 months",
     ),
     dict(
         ref="NHA/ABDM/2026/GR/210", source="pib", src_url="https://pib.gov.in/nha210",
         event_type=EventType.funding, etype_label="Funding release",
-        title="ABDM digital health infrastructure grant", value=350_000_000,
-        buyer="Ministry of Health & Family Welfare", department="National Health Authority", sector="Healthcare",
-        event_date=date(2026, 7, 22), location="New Delhi",
-        snippet="NHA releases Rs 35 crore under ABDM to Bharat Health Systems.",
-        company="Bharat Health Systems Ltd", cin="U72300TG2017PLC210000", industry="Health IT",
-        hq_city="Hyderabad", hq_state="Telangana", size="201-500", website="https://bharathealth.example",
-        revenue=1_800_000_000, employees=380, description="Digital health records and hospital information systems.",
-        product="cloud_infrastructure", opp_type=OpportunityType.other,
-        need="Cloud scale-up with patient-data protection", tier="inference",
-        reasoning="Bharat Health received a Rs 35 crore ABDM grant to build health-record infrastructure, implying "
-                  "a cloud scale-up and, given patient data, a parallel security need.",
-        opp_conf=0.72, target_sectors=["Healthcare"], evidence_conf=[0.85],
-        contact=None, timing="0-9 months",
+        title="ABDM telemedicine & health-records rollout", value=350_000_000,
+        buyer="Ministry of Health & Family Welfare", department="National Health Authority", sector="eHealth",
+        event_date=date(2026, 7, 29), location="New Delhi",
+        snippet="NHA releases Rs 35 crore under ABDM to Arogya HealthTech for telemedicine rollout.",
+        company="Arogya HealthTech Pvt Ltd", cin="U72300TG2017PTC210000", industry="Health IT",
+        hq_city="Hyderabad", hq_state="Telangana", size="201-500", website="https://arogyahealth.example",
+        revenue=1_800_000_000, employees=380, description="Telemedicine, ABHA-linked health records and hospital information systems.",
+        product="ehealth",
+        need="Sponsor Elets eHealth Summit 2026", tier="inference",
+        reasoning="Arogya just received a Rs 35 crore ABDM award to scale telemedicine nationally; the eHealth Summit "
+                  "is where the National Health Authority and state health missions convene, making it a natural "
+                  "platform for Arogya to build its next set of government relationships.",
+        opp_conf=0.78, target_sectors=ICP_SECTORS, evidence_conf=[0.9],
+        contact=("Dr. Kavya Nair", "Chief Technology Officer", Seniority.c_level,
+                 "kavya.nair@arogyahealth.example", "https://linkedin.example/in/kavyanair"),
+        timing="0-5 months",
+    ),
+    dict(
+        ref="PNB/DBT/2026/AW/556", source="eprocure", src_url="https://eprocure.gov.in/award/pnb556",
+        event_type=EventType.award, etype_label="Contract award",
+        title="Core-banking & digital-banking modernization", value=900_000_000,
+        buyer="Punjab & Sind Bank (PSU)", department="IT Modernization Programme", sector="Banking",
+        event_date=date(2026, 8, 14), location="New Delhi",
+        snippet="Punjab & Sind Bank awards Rs 90 crore core-banking modernization contract to FinServe Technologies.",
+        company="FinServe Technologies Pvt Ltd", cin="U72200KA2014PTC055600", industry="Banking Technology",
+        hq_city="Bengaluru", hq_state="Karnataka", size="1001-5000", website="https://finserve.example",
+        revenue=7_200_000_000, employees=1900, description="Core-banking, digital-lending and payments platforms for banks and PSUs.",
+        product="bfsi",
+        need="Sponsor Elets BFSI Leadership Summit 2026", tier="inference",
+        reasoning="FinServe just won a Rs 90 crore PSU core-banking modernization deal; the BFSI Leadership Summit is "
+                  "attended by public-sector-bank CIOs, exactly the buyers FinServe wants for its next wave of "
+                  "modernization mandates.",
+        opp_conf=0.82, target_sectors=ICP_SECTORS, evidence_conf=[0.9, 0.85],
+        contact=("Aditya Sharma", "Chief Revenue Officer", Seniority.c_level,
+                 "aditya.sharma@finserve.example", "https://linkedin.example/in/adityasharma"),
+        timing="0-4 months",
+    ),
+    dict(
+        ref="MoF/DBT/2026/WO/402", source="eprocure", src_url="https://eprocure.gov.in/award/dbt402",
+        event_type=EventType.work_order, etype_label="Work order",
+        title="State treasury & DBT digitization platform", value=600_000_000,
+        buyer="Dept. of Finance (Madhya Pradesh)", department="Direct Benefit Transfer Cell", sector="Finance",
+        event_date=date(2026, 8, 9), location="Bhopal, Madhya Pradesh",
+        snippet="Madhya Pradesh Finance Dept awards Rs 60 crore treasury/DBT platform contract to PayNext Solutions.",
+        company="PayNext Solutions Pvt Ltd", cin="U65999MP2016PTC040200", industry="FinTech",
+        hq_city="Indore", hq_state="Madhya Pradesh", size="501-1000", website="https://paynext.example",
+        revenue=3_100_000_000, employees=640, description="Government payments, treasury and Direct Benefit Transfer platforms.",
+        product="bfsi",
+        need="Sponsor Elets BFSI Leadership Summit 2026", tier="inference",
+        reasoning="PayNext just won a Rs 60 crore state treasury/DBT platform; with one state live it is chasing "
+                  "others, and the BFSI/Banking & Finance Post platform reaches the finance secretaries who make "
+                  "these decisions.",
+        opp_conf=0.76, target_sectors=ICP_SECTORS, evidence_conf=[0.88],
+        contact=("Nikhil Jain", "VP – Public Sector Sales", Seniority.vp,
+                 "nikhil.jain@paynext.example", "https://linkedin.example/in/nikhiljain"),
+        timing="0-6 months",
     ),
 ]
 
@@ -121,30 +193,33 @@ def _brief_md(spec, total, grade, evidence_lines) -> str:
     company = spec["company"]
     value_cr = f"Rs {spec['value']/1e7:.0f} crore"
     date_s = spec["event_date"].isoformat()
+    event = PRODUCTS[spec["product"]][0].split(" — ")[0]
     if spec["contact"]:
         who = f"{spec['contact'][0]} - {spec['contact'][1]} (verified)."
-        action = f"Call {spec['contact'][1]} within {spec['timing']}, leading with the award as the trigger."
+        action = (f"Call {spec['contact'][1]} within {spec['timing']}. Open by congratulating them on the "
+                  f"{value_cr} win, then invite them to sponsor {event}.")
     else:
-        who = "No specific contact verified yet. Target roles: CTO, Head of Engineering, DPO."
-        action = "Prioritise: identify the CTO and reach out within " + spec["timing"] + "."
+        who = "No specific contact verified yet. Target roles: CMO / VP Marketing, Head of Government Business, CEO."
+        action = f"Identify the marketing / government-business lead and pitch a {event} sponsorship within {spec['timing']}."
     return "\n\n".join([
-        f"## Trigger\n{company} is linked to a {spec['etype_label'].lower()} worth {value_cr} in "
-        f"{spec['sector']} ({date_s}).",
+        f"## Trigger\n{company} just won a {spec['etype_label'].lower()} worth {value_cr} in "
+        f"{spec['sector']} ({date_s}) — fresh government revenue and a reason to raise its profile.",
         f"## Why this company\n{company}: industry {spec['industry']}; HQ {spec['hq_city']}, "
-        f"{spec['hq_state']}; size {spec['size']}.",
-        f"## Why now{inf}\nTimely because the event is dated {date_s} and the mandate is time-bound.",
-        f"## Business need hypothesis{inf}\nHypothesis ({spec['tier']}): {spec['need']}. {spec['reasoning']}",
+        f"{spec['hq_state']}; size {spec['size']}. Active in a sector Elets convenes.",
+        f"## Why now{inf}\nThe win is dated {date_s}; budget and appetite for visibility are highest right after a "
+        f"public award, while the story is still current.",
+        f"## Sponsorship fit{inf}\n{spec['reasoning']}",
         f"## Who to contact\n{who}",
-        f"## Reason to call{inf}\n{company}'s {spec['etype_label'].lower()} could create a "
-        f"{spec['need'].lower()} - a timely fit for {PRODUCTS[spec['product']][0]}.",
+        f"## Reason to call{inf}\n{company} just won {value_cr} in {spec['sector']} government business — "
+        f"congratulate them and invite them to put that win in front of the government buyers who attend {event}.",
         "## Evidence\n" + "\n".join(evidence_lines),
         f"## Confidence\nLead score {total}/100 (grade {grade}); opportunity confidence "
         f"{int(spec['opp_conf']*100)}%.",
         f"## Recommended next action{inf}\n{action}",
         "## Risk / uncertainty\nThis lead may be incorrect if:\n"
-        "- The core need is an inference, not a verified fact\n"
+        "- The sponsorship fit is an inference, not a stated intent\n"
         + ("- No verified decision-maker contact identified\n" if not spec["contact"] else "")
-        + "- The company may address the need in-house",
+        + "- The company may have no events/marketing budget this cycle",
     ])
 
 
@@ -206,7 +281,7 @@ def make_lead(session, spec) -> None:
 
     prod_name, prod_id = PRODUCTS[spec["product"]]
     opp = Opportunity(organization_id=ORG_ID, government_event_id=ge.id, company_id=company.id, product_id=prod_id,
-                      opportunity_type=spec["opp_type"], title=spec["need"], rationale=spec["reasoning"],
+                      opportunity_type=OpportunityType.sponsorship, title=spec["need"], rationale=spec["reasoning"],
                       status=OpportunityStatus.new, detected_by=DetectionMethod.rule, confidence=spec["opp_conf"])
     session.add(opp)
     session.flush()
@@ -232,27 +307,64 @@ def make_lead(session, spec) -> None:
                                     description=spec["snippet"], weight=0.9))
 
 
-def main() -> None:
+def _reset_demo(session) -> None:
+    """Delete demo content so the board can be reseeded (e.g. after changing the
+    target sectors). Only touches the demo org's leads and the content tables the
+    seed itself creates."""
+    from sqlalchemy import delete
+
+    from app.db.models import (
+        CompanyEnrichment,
+        Contact,
+        EventSource,
+        LeadScore,
+        OpportunityEvidence,
+        SalesBrief,
+        SalesFeedback,
+    )
+
+    opp_ids = list(session.scalars(select(Opportunity.id).where(Opportunity.organization_id == ORG_ID)))
+    if opp_ids:
+        for model in (SalesFeedback, LeadScore, SalesBrief, OpportunityEvidence):
+            session.execute(delete(model).where(model.opportunity_id.in_(opp_ids)))
+        session.execute(delete(Opportunity).where(Opportunity.id.in_(opp_ids)))
+    # Content tables are demo-only here; clear them wholesale so companies/events
+    # from a previous sector configuration don't linger.
+    for model in (EventSource, OpportunityEvidence, SalesBrief, LeadScore, Contact,
+                  CompanyEnrichment, GovernmentEvent, RawDocument, Company):
+        session.execute(delete(model))
+    session.flush()
+
+
+def main(reset: bool = False) -> None:
     with SessionLocal() as session:
         org = session.get(Organization, ORG_ID)
         if org is None:
             session.add(Organization(id=ORG_ID, name="Elets Technomedia", slug="elets", domain="elets.in"))
             session.flush()
+
+        if reset:
+            _reset_demo(session)
+
         for cat, (name, pid) in PRODUCTS.items():
-            if session.get(Product, pid) is None:
+            existing = session.get(Product, pid)
+            if existing is None:
                 session.add(Product(id=pid, organization_id=ORG_ID, name=name, attributes={"category": cat}))
+            else:
+                existing.name = name
+                existing.attributes = {"category": cat}
         session.flush()
 
         if session.scalar(select(Opportunity).where(Opportunity.organization_id == ORG_ID)) is not None:
-            print("Demo leads already present — nothing to do.")
+            print("Demo leads already present — nothing to do. Re-run with --reset to refresh.")
             return
         for spec in LEADS:
             make_lead(session, spec)
         session.commit()
-        n = session.scalar(select(Opportunity).where(Opportunity.organization_id == ORG_ID).with_only_columns(
-            Opportunity.id))
-    print(f"Seeded {len(LEADS)} demo leads for org {ORG_ID}.")
+    print(f"Seeded {len(LEADS)} demo leads for org {ORG_ID} across sectors: {', '.join(ICP_SECTORS)}.")
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+
+    main(reset="--reset" in sys.argv)

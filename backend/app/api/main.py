@@ -1,6 +1,9 @@
 """FastAPI app factory."""
 from __future__ import annotations
 
+import asyncio
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -14,15 +17,36 @@ from app.api.logging import (
 from app.api.repository import InMemoryLeadRepository, LeadRepository
 from app.api.routers import leads
 from app.api.security import RateLimiter
+from app.api.ws import ConnectionManager, db_listener
+from app.api.ws import router as ws_router
 from app.config import Settings, get_settings
+
+
+@asynccontextmanager
+async def _lifespan(app: FastAPI):
+    # Start the Postgres LISTEN/NOTIFY watcher only when a real DB is configured;
+    # in-memory mode (tests, local) has no notify channel to listen on.
+    task = None
+    if getattr(app.state, "settings", None) and app.state.settings.use_db_repository:
+        task = asyncio.create_task(db_listener(app))
+    try:
+        yield
+    finally:
+        if task:
+            task.cancel()
+            try:
+                await task
+            except (asyncio.CancelledError, Exception):
+                pass
 
 
 def create_app(settings: Settings | None = None, repository: LeadRepository | None = None) -> FastAPI:
     settings = settings or get_settings()
     configure_logging()
 
-    app = FastAPI(title="GovIntel Read API", version="0.1.0")
+    app = FastAPI(title="GovIntel Read API", version="0.1.0", lifespan=_lifespan)
     app.state.settings = settings
+    app.state.ws_manager = ConnectionManager()
     app.state.rate_limiter = RateLimiter(settings.rate_limit_per_minute)
     if repository is None and settings.use_db_repository:
         from app.api.db_repository import SqlAlchemyLeadRepository
@@ -60,6 +84,7 @@ def create_app(settings: Settings | None = None, repository: LeadRepository | No
         return {"status": "ok"}
 
     app.include_router(leads.router)
+    app.include_router(ws_router)
 
     # Serve the dashboard (same-origin) if the frontend directory is present.
     import os

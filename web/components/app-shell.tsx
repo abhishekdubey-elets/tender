@@ -15,10 +15,12 @@ const NAV = [
 
 function RefreshPill({
   autoRefresh,
+  live,
   onToggle,
   refreshedAt,
 }: {
   autoRefresh: boolean;
+  live: boolean;
   onToggle: () => void;
   refreshedAt: number | null;
 }) {
@@ -29,14 +31,22 @@ function RefreshPill({
   }, []);
   const rel =
     refreshedAt == null ? "" : `${Math.max(0, Math.round((Date.now() - refreshedAt) / 1000))}s ago`;
+
+  // state: paused → live (socket connected) → reconnecting (auto on, socket down)
+  const state = !autoRefresh ? "paused" : live ? "live" : "reconnecting";
+  const label =
+    state === "paused" ? "Paused" : state === "live" ? (rel ? `Live · ${rel}` : "Live") : "Reconnecting…";
+  const title =
+    state === "paused"
+      ? "Live push paused — click to resume"
+      : state === "live"
+        ? "Live push connected (WebSocket) — click to pause"
+        : "Reconnecting to live push — falling back to polling";
+
   return (
-    <button
-      className={`refresh-pill ${autoRefresh ? "on" : ""}`}
-      onClick={onToggle}
-      title={autoRefresh ? "Live auto-refresh on — click to pause" : "Auto-refresh paused — click to resume"}
-    >
+    <button className={`refresh-pill ${state}`} onClick={onToggle} title={title}>
       <span className="pulse" />
-      {autoRefresh ? (rel ? `Live · ${rel}` : "Live") : "Paused"}
+      {label}
     </button>
   );
 }
@@ -46,6 +56,7 @@ export function AppShell({
   onSearch,
   online,
   autoRefresh,
+  live,
   onToggleAutoRefresh,
   refreshedAt,
   children,
@@ -54,6 +65,7 @@ export function AppShell({
   onSearch: (v: string) => void;
   online: boolean;
   autoRefresh: boolean;
+  live: boolean;
   onToggleAutoRefresh: () => void;
   refreshedAt: number | null;
   children: React.ReactNode;
@@ -128,7 +140,7 @@ export function AppShell({
             <span className={`dot ${online ? "" : "err"}`} />
             {online ? "Postgres" : "API offline"}
           </motion.div>
-          <RefreshPill autoRefresh={autoRefresh} onToggle={onToggleAutoRefresh} refreshedAt={refreshedAt} />
+          <RefreshPill autoRefresh={autoRefresh} live={live} onToggle={onToggleAutoRefresh} refreshedAt={refreshedAt} />
           <ThemeToggle />
         </div>
 

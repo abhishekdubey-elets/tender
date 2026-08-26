@@ -52,6 +52,7 @@ export default function Page() {
   const [toast, setToast] = useState<string | null>(null);
 
   const [autoRefresh, setAutoRefresh] = useState(true);
+  const [live, setLive] = useState(false);
   const [refreshedAt, setRefreshedAt] = useState<number | null>(null);
   const filtersRef = useRef(filters);
   filtersRef.current = filters;
@@ -112,13 +113,83 @@ export default function Page() {
     }
   }, []);
 
-  // live auto-refresh poller (paused when tab hidden or toggled off)
+  // Live push over WebSocket: the server broadcasts a "leads_changed" signal the
+  // instant any lead row changes (Postgres LISTEN/NOTIFY), and we re-sync on it.
+  // Falls back to slow polling if the socket can't connect, and reconnects with
+  // backoff. Toggling off (or a hidden tab) stops both.
   useEffect(() => {
-    if (!autoRefresh) return;
-    const id = setInterval(() => {
-      if (document.visibilityState === "visible") silentRefresh();
-    }, 10000);
-    return () => clearInterval(id);
+    if (!autoRefresh) {
+      setLive(false);
+      return;
+    }
+    let ws: WebSocket | null = null;
+    let closed = false;
+    let backoff = 1000;
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+    let fallbackTimer: ReturnType<typeof setInterval> | null = null;
+
+    const startFallback = () => {
+      if (!fallbackTimer)
+        fallbackTimer = setInterval(() => {
+          if (document.visibilityState === "visible") silentRefresh();
+        }, 15000);
+    };
+    const stopFallback = () => {
+      if (fallbackTimer) clearInterval(fallbackTimer);
+      fallbackTimer = null;
+    };
+
+    const connect = () => {
+      const base = process.env.NEXT_PUBLIC_WS_URL || "ws://127.0.0.1:8000/ws";
+      const token = process.env.NEXT_PUBLIC_WS_TOKEN || "";
+      try {
+        ws = new WebSocket(`${base}?token=${encodeURIComponent(token)}`);
+      } catch {
+        setLive(false);
+        startFallback();
+        return;
+      }
+      ws.onopen = () => {
+        setLive(true);
+        backoff = 1000;
+        stopFallback();
+        silentRefresh(); // sync immediately on (re)connect
+      };
+      ws.onmessage = (ev) => {
+        try {
+          const m = JSON.parse(ev.data);
+          if (m.type === "leads_changed") silentRefresh();
+        } catch {
+          /* ignore keepalive / non-JSON frames */
+        }
+      };
+      ws.onclose = () => {
+        setLive(false);
+        if (closed) return;
+        startFallback(); // keep data fresh while the socket is down
+        reconnectTimer = setTimeout(connect, backoff);
+        backoff = Math.min(backoff * 2, 15000);
+      };
+      ws.onerror = () => {
+        try {
+          ws?.close();
+        } catch {
+          /* no-op */
+        }
+      };
+    };
+
+    connect();
+    return () => {
+      closed = true;
+      stopFallback();
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      try {
+        ws?.close();
+      } catch {
+        /* no-op */
+      }
+    };
   }, [autoRefresh, silentRefresh]);
 
   const stats = useMemo(() => {
@@ -184,6 +255,7 @@ export default function Page() {
       onSearch={setSearch}
       online={online}
       autoRefresh={autoRefresh}
+      live={live}
       onToggleAutoRefresh={() => setAutoRefresh((v) => !v)}
       refreshedAt={refreshedAt}
     >
