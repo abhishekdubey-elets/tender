@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { BarChart3, Building2, Radar, Search, Settings, Target } from "lucide-react";
+import { useEffect, useState } from "react";
 import { ThemeToggle } from "./ui";
 
 const NAV = [
@@ -12,15 +13,49 @@ const NAV = [
   { icon: Settings, label: "Settings", active: false },
 ];
 
+function RefreshPill({
+  autoRefresh,
+  onToggle,
+  refreshedAt,
+}: {
+  autoRefresh: boolean;
+  onToggle: () => void;
+  refreshedAt: number | null;
+}) {
+  const [, tick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => tick((t) => t + 1), 1000);
+    return () => clearInterval(id);
+  }, []);
+  const rel =
+    refreshedAt == null ? "" : `${Math.max(0, Math.round((Date.now() - refreshedAt) / 1000))}s ago`;
+  return (
+    <button
+      className={`refresh-pill ${autoRefresh ? "on" : ""}`}
+      onClick={onToggle}
+      title={autoRefresh ? "Live auto-refresh on — click to pause" : "Auto-refresh paused — click to resume"}
+    >
+      <span className="pulse" />
+      {autoRefresh ? (rel ? `Live · ${rel}` : "Live") : "Paused"}
+    </button>
+  );
+}
+
 export function AppShell({
   search,
   onSearch,
   online,
+  autoRefresh,
+  onToggleAutoRefresh,
+  refreshedAt,
   children,
 }: {
   search: string;
   onSearch: (v: string) => void;
   online: boolean;
+  autoRefresh: boolean;
+  onToggleAutoRefresh: () => void;
+  refreshedAt: number | null;
   children: React.ReactNode;
 }) {
   return (
@@ -91,8 +126,9 @@ export function AppShell({
             transition={{ delay: 0.3 }}
           >
             <span className={`dot ${online ? "" : "err"}`} />
-            {online ? "Live · Postgres" : "API offline"}
+            {online ? "Postgres" : "API offline"}
           </motion.div>
+          <RefreshPill autoRefresh={autoRefresh} onToggle={onToggleAutoRefresh} refreshedAt={refreshedAt} />
           <ThemeToggle />
         </div>
 

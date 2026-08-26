@@ -2,7 +2,7 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { CheckCircle2, Flame, IndianRupee, Target, TrendingUp } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { LeadCard } from "@/components/lead-card";
 import { LeadDrawer } from "@/components/lead-drawer";
@@ -51,6 +51,11 @@ export default function Page() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [refreshedAt, setRefreshedAt] = useState<number | null>(null);
+  const filtersRef = useRef(filters);
+  filtersRef.current = filters;
+
   // options (once)
   useEffect(() => {
     getLeads({})
@@ -72,18 +77,49 @@ export default function Page() {
     return () => clearTimeout(t);
   }, [search]);
 
-  // leads on filter change
+  // leads on filter change (shows skeleton — explicit user action)
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
     getLeads(filters)
-      .then((ls) => !cancelled && (setLeads(ls), setOnline(true)))
+      .then((ls) => {
+        if (cancelled) return;
+        setLeads(ls);
+        setOnline(true);
+        setRefreshedAt(Date.now());
+      })
       .catch(() => !cancelled && setOnline(false))
       .finally(() => !cancelled && setLoading(false));
     return () => {
       cancelled = true;
     };
   }, [filters]);
+
+  // silent background refresh — no skeleton, no re-stagger; keeps drawer status in sync
+  const silentRefresh = useCallback(async () => {
+    try {
+      const ls = await getLeads(filtersRef.current);
+      setLeads(ls);
+      setOnline(true);
+      setRefreshedAt(Date.now());
+      setDetail((d) => {
+        if (!d) return d;
+        const match = ls.find((l) => l.id === d.id);
+        return match && match.status !== d.status ? { ...d, status: match.status } : d;
+      });
+    } catch {
+      setOnline(false);
+    }
+  }, []);
+
+  // live auto-refresh poller (paused when tab hidden or toggled off)
+  useEffect(() => {
+    if (!autoRefresh) return;
+    const id = setInterval(() => {
+      if (document.visibilityState === "visible") silentRefresh();
+    }, 10000);
+    return () => clearInterval(id);
+  }, [autoRefresh, silentRefresh]);
 
   const stats = useMemo(() => {
     const n = leads.length;
@@ -143,7 +179,14 @@ export default function Page() {
   );
 
   return (
-    <AppShell search={search} onSearch={setSearch} online={online}>
+    <AppShell
+      search={search}
+      onSearch={setSearch}
+      online={online}
+      autoRefresh={autoRefresh}
+      onToggleAutoRefresh={() => setAutoRefresh((v) => !v)}
+      refreshedAt={refreshedAt}
+    >
       <motion.div className="page-head" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
         <h2>High-priority leads</h2>
         <p>Companies that just won government money — why it's an opening, and who to call.</p>
