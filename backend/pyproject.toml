@@ -17,6 +17,7 @@ dependencies = [
     "fastapi>=0.110",
     "uvicorn[standard]>=0.29",
     "websockets>=12",  # WebSocket push (uvicorn ws impl); explicit so it can't be dropped
+    "pymongo[srv]>=4.6",  # MongoDB Atlas serving path (USE_MONGO) + change streams
     # ingestion framework
     "httpx>=0.27",
     "beautifulsoup4>=4.12",

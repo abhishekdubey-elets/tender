@@ -39,6 +39,13 @@ class Settings(BaseSettings):
     # otherwise it uses the in-memory demo repository.
     use_db_repository: bool = False
 
+    # --- MongoDB (Phase 1 migration): serve the board from Atlas when enabled ---
+    # Takes precedence over use_db_repository for the read API. The URI is a secret
+    # (mongodb+srv://…) and belongs only in the git-ignored .env.
+    use_mongo: bool = False
+    mongodb_uri: SecretStr | None = None
+    mongodb_db: str = "govintel"
+
     # --- automated crawl (Google News -> rule-extracted news leads) ---
     crawl_enabled: bool = True       # run the background scheduler
     crawl_interval_hours: int = 24   # once per day by default

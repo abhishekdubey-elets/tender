@@ -50,12 +50,16 @@ async def _safe_crawl(app: FastAPI) -> None:
 
 @asynccontextmanager
 async def _lifespan(app: FastAPI):
-    # Start the Postgres LISTEN/NOTIFY watcher and the crawl scheduler only when a
-    # real DB is configured; in-memory mode (tests, local) has neither.
+    # Start the real-time push watcher (and, on Postgres, the crawl scheduler).
+    # In-memory mode (tests, local) starts nothing.
     tasks = []
-    if getattr(app.state, "settings", None) and app.state.settings.use_db_repository:
+    settings = getattr(app.state, "settings", None)
+    if settings and settings.use_mongo and settings.mongodb_uri:
+        from app.api.mongo_repository import mongo_change_listener
+        tasks.append(asyncio.create_task(mongo_change_listener(app)))
+    elif settings and settings.use_db_repository:
         tasks.append(asyncio.create_task(db_listener(app)))
-        if app.state.settings.crawl_enabled:
+        if settings.crawl_enabled:
             tasks.append(asyncio.create_task(_crawl_scheduler(app)))
     try:
         yield
@@ -72,18 +76,23 @@ def create_app(settings: Settings | None = None, repository: LeadRepository | No
     settings = settings or get_settings()
     configure_logging()
 
-    # Only the live DB server needs the LISTEN/NOTIFY watcher, so the in-memory
-    # app (tests, local demo) runs without a lifespan.
-    lifespan = _lifespan if settings.use_db_repository else None
+    # Only a live backing store needs the push watcher, so the in-memory app
+    # (tests, local demo) runs without a lifespan.
+    use_live = settings.use_db_repository or (settings.use_mongo and settings.mongodb_uri is not None)
+    lifespan = _lifespan if use_live else None
     app = FastAPI(title="GovIntel Read API", version="0.1.0", lifespan=lifespan)
     app.state.settings = settings
     app.state.ws_manager = ConnectionManager()
     app.state.crawl_lock = asyncio.Lock()
     app.state.rate_limiter = RateLimiter(settings.rate_limit_per_minute)
-    if repository is None and settings.use_db_repository:
-        from app.api.db_repository import SqlAlchemyLeadRepository
-        from app.db.session import SessionLocal
-        repository = SqlAlchemyLeadRepository(SessionLocal)
+    if repository is None:
+        if settings.use_mongo and settings.mongodb_uri:
+            from app.api.mongo_repository import MongoLeadRepository
+            repository = MongoLeadRepository(settings.mongodb_uri.get_secret_value(), settings.mongodb_db)
+        elif settings.use_db_repository:
+            from app.api.db_repository import SqlAlchemyLeadRepository
+            from app.db.session import SessionLocal
+            repository = SqlAlchemyLeadRepository(SessionLocal)
     app.state.repository = repository or InMemoryLeadRepository()
 
     app.add_middleware(RequestContextMiddleware)
