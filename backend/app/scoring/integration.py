@@ -1,6 +1,8 @@
 """Bridge: build a ScoringInput from opportunity-engine outputs (pure)."""
 from __future__ import annotations
 
+from collections.abc import Callable
+
 from app.opportunity.types import (
     CompanyProfileInput,
     EventInput,
@@ -19,9 +21,15 @@ def scoring_input_from_opportunity(
     num_contacts: int = 0,
     best_contact_seniority: str | None = None,
     ideal_employee_ranges: list[str] | None = None,
+    authority_of: Callable[[str | None], float] | None = None,
 ) -> ScoringInput:
+    # Optionally discount each evidence item's confidence by the authority of its
+    # source (award document > news mention). Off by default to keep pure callers
+    # unchanged; the live pipeline passes ``authority_for_url``.
     evidence_confs = [
-        ev.confidence for ev in opportunity.supporting_evidence if ev.confidence is not None
+        (ev.confidence if authority_of is None else ev.confidence * authority_of(ev.source_url))
+        for ev in opportunity.supporting_evidence
+        if ev.confidence is not None
     ]
     return ScoringInput(
         event_type=event.event_type,

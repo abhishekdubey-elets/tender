@@ -44,7 +44,10 @@ def create_app(settings: Settings | None = None, repository: LeadRepository | No
     settings = settings or get_settings()
     configure_logging()
 
-    app = FastAPI(title="GovIntel Read API", version="0.1.0", lifespan=_lifespan)
+    # Only the live DB server needs the LISTEN/NOTIFY watcher, so the in-memory
+    # app (tests, local demo) runs without a lifespan.
+    lifespan = _lifespan if settings.use_db_repository else None
+    app = FastAPI(title="GovIntel Read API", version="0.1.0", lifespan=lifespan)
     app.state.settings = settings
     app.state.ws_manager = ConnectionManager()
     app.state.rate_limiter = RateLimiter(settings.rate_limit_per_minute)

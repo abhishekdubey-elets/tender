@@ -7,8 +7,28 @@ inside a transaction that is rolled back for isolation.
 """
 from __future__ import annotations
 
+import asyncio
 import os
+import sys
 from collections.abc import Iterator
+
+# Windows' default ProactorEventLoop crashes (access violation in _write_to_self)
+# under Starlette's TestClient blocking portal. Force a Selector loop for the
+# portal by injecting a loop_factory; test-infra only, no production effect.
+if sys.platform == "win32":
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
+    import anyio.from_thread as _aft
+
+    _orig_start_portal = _aft.start_blocking_portal
+
+    def _selector_start_portal(backend: str = "asyncio", backend_options: dict | None = None):
+        if backend == "asyncio":
+            backend_options = dict(backend_options or {})
+            backend_options.setdefault("loop_factory", asyncio.SelectorEventLoop)
+        return _orig_start_portal(backend=backend, backend_options=backend_options)
+
+    _aft.start_blocking_portal = _selector_start_portal
 
 import pytest
 from alembic import command

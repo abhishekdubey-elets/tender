@@ -24,10 +24,17 @@ class RobotsChecker:
         fetcher: Fetcher,
         *,
         allow_on_error: bool = True,
+        forbidden_is_disallow: bool = True,
     ) -> None:
         self._user_agent = user_agent
         self._fetcher = fetcher
         self._allow_on_error = allow_on_error
+        # By default a 401/403 on robots.txt is treated as a site-wide disallow
+        # (we never work around access controls). Some public, machine-facing
+        # sources (e.g. government RSS behind a bot-WAF) publish no robots.txt and
+        # merely 403 the robots request itself; for those a caller may opt to
+        # treat "robots unavailable" as allowed, per RFC 9309 §2.3.1.3.
+        self._forbidden_is_disallow = forbidden_is_disallow
         self._cache: dict[str, RobotFileParser | None] = {}
         # host -> explicit allow/deny-all decision when there are no parseable
         # rules (e.g. 401/403 → deny all, 404 → allow all).
@@ -52,7 +59,9 @@ class RobotsChecker:
 
         status, text = result
         if status in (401, 403):
-            self._blanket[host] = False       # access restricted → full disallow
+            # access restricted → full disallow, unless the caller opts to treat
+            # an unavailable robots.txt as unrestricted for this source.
+            self._blanket[host] = not self._forbidden_is_disallow
             return
         if 400 <= status < 500:
             self._blanket[host] = True         # e.g. 404 → no restrictions

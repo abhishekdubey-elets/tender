@@ -64,6 +64,7 @@ class HttpClient:
         rate_limiter: RateLimiter | None = None,
         retry_policy: RetryPolicy | None = None,
         respect_robots: bool = True,
+        robots_forbidden_is_disallow: bool = True,
         timeout: float = 30.0,
         sleep: Callable[[float], None] = time.sleep,
     ) -> None:
@@ -78,7 +79,10 @@ class HttpClient:
             timeout=timeout,
             follow_redirects=True,
         )
-        self.robots = RobotsChecker(user_agent, self._robots_fetch)
+        self.robots = RobotsChecker(
+            user_agent, self._robots_fetch,
+            forbidden_is_disallow=robots_forbidden_is_disallow,
+        )
 
     # -- context management -------------------------------------------------
     def close(self) -> None:

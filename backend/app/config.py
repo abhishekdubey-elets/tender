@@ -42,6 +42,8 @@ class Settings(BaseSettings):
     # --- secrets (never logged; SecretStr redacts on repr) ---
     anthropic_api_key: SecretStr | None = None
     voyage_api_key: SecretStr | None = None
+    # data.gov.in (Open Government Data) API key — free, from https://data.gov.in.
+    data_gov_api_key: SecretStr | None = None
 
     # --- retention / privacy (India DPDP) ---
     contact_retention_days: int = 365
