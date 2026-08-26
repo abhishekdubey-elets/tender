@@ -60,4 +60,12 @@ def create_app(settings: Settings | None = None, repository: LeadRepository | No
         return {"status": "ok"}
 
     app.include_router(leads.router)
+
+    # Serve the dashboard (same-origin) if the frontend directory is present.
+    import os
+    frontend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "frontend"))
+    if os.path.isdir(frontend_dir):
+        from fastapi.staticfiles import StaticFiles
+        app.mount("/app", StaticFiles(directory=frontend_dir, html=True), name="dashboard")
+
     return app

@@ -1,0 +1,13 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "govintel-api",
+      "runtimeExecutable": "backend/.venv/Scripts/python.exe",
+      "runtimeArgs": ["-m", "uvicorn", "app.api:create_app", "--factory",
+                      "--app-dir", "backend", "--env-file", "backend/.env",
+                      "--host", "127.0.0.1", "--port", "8000"],
+      "port": 8000
+    }
+  ]
+}
