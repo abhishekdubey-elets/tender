@@ -4,22 +4,44 @@ End-to-end validation against a **controlled dataset of 12 representative Indian
 government documents** (PIB press releases, CPPP/eProcurement JSON awards, news,
 a scanned PDF, and edge cases). Harness: `scripts/validate_e2e.py` (re-runnable).
 
+## ✅ Live-DB validation update — 2026-08-26
+
+Since the first pass, **Postgres+pgvector came up and the full stack was proven
+live** (this is no longer just an offline harness):
+
+- Alembic migration `0001` applied cleanly to a live database; **the full test
+  suite ran green against Postgres — 173 tests**, including the 25 DB-backed
+  schema/constraint/relationship/seed tests (enums, partial indexes, check
+  constraints, pgvector all verified).
+- Three complete demo leads were **persisted and read back** through
+  `SqlAlchemyLeadRepository` (opportunities → events → companies → enrichment →
+  contacts → scores → briefs).
+- The application ran **end-to-end in a browser** (FastAPI + Next.js SaaS UI):
+  board, filters, detail drawer with clickable source URLs, and a **feedback
+  POST that wrote an immutable `sales_feedback` row and advanced the opportunity
+  status to `meeting`** in Postgres.
+
+Net effect: the **persistence, API, dashboard and feedback** layers move from
+"logic-only" to **live-proven**. What remains capped at PARTIAL is unchanged —
+the stages that depend on **real external intelligence** (see below).
+
 ## ⚠️ Scope & honesty of this validation
 
-This environment has **no network and no running database**, so:
+The **offline harness** (`scripts/validate_e2e.py`) still mocks what this
+environment cannot reach:
 
 - Documents are **representative fixtures**, not live-fetched from gov portals.
 - The **LLM, enrichment providers and contact providers are mocked** with
   realistic behaviour (per-company industries; contacts found for only some
-  companies). Therefore this validates the pipeline's **logic, plumbing, safety
-  controls and edge-case handling** — **NOT** the real-world *accuracy* of LLM
-  extraction, the *quality* of live enrichment data, or contact *coverage*.
-- DB-backed persistence (`*_db.py`, migration) is import-clean but **not executed**.
+  companies). This validates the pipeline's **logic, plumbing, safety controls
+  and edge-case handling** — **NOT** the real-world *accuracy* of LLM extraction,
+  the *quality* of live enrichment data, or contact *coverage*.
+- No real LLM was run. (An OpenAI key was offered but not used — the platform is
+  built on Claude/Anthropic, and that key was treated as compromised on paste.)
 
 Verdicts below reflect this: subsystems whose correctness depends on live
-external intelligence are capped at **PARTIAL** until validated against real
-sources + a live database. **The pipeline running cleanly is treated as necessary,
-not sufficient.**
+external intelligence stay at **PARTIAL** until validated against real sources
+with a real model. **The pipeline running cleanly is necessary, not sufficient.**
 
 ## Per-stage results (measured)
 
@@ -122,12 +144,14 @@ enrichment/contact data quality) and DB execution are unvalidated here.
 ### To move PARTIAL → PASS
 1. Run this harness against **real documents from 1–2 legally-accessible sources**
    (e.g. PIB RSS, a data.gov.in dataset) with the **real Anthropic client** — and
-   score extraction accuracy on a human-labelled set.
-2. Stand up **Postgres+pgvector**, run `alembic upgrade head`, execute the
-   DB-backed tests, and swap the API's in-memory repository for the SQLAlchemy one.
+   score extraction accuracy on a human-labelled set. *(still open — needs a real
+   Anthropic key + network)*
+2. ✅ **DONE (2026-08-26)** — Postgres+pgvector stood up, `alembic upgrade head`
+   applied, DB-backed tests green (173), and `SqlAlchemyLeadRepository` serving
+   live data via `USE_DB_REPOSITORY=true`.
 3. Wire **real enrichment + contact providers** and re-measure contact coverage
-   and false-positive rate.
+   and false-positive rate. *(still open)*
 4. Add the operational layer (worker over `processing_jobs`, retention purge,
-   metrics/alerting) from `docs/PRODUCTION_AUDIT.md`.
+   metrics/alerting) from `docs/PRODUCTION_AUDIT.md`. *(still open)*
 
 *Reproduce:* `cd backend && ./.venv/Scripts/python -m scripts.validate_e2e`
