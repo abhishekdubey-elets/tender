@@ -1,0 +1,42 @@
+# Render Blueprint — free Docker backend + Node frontend for GovIntel.
+# Deploy: Render → New → Blueprint → pick this repo (render.yaml must be at repo root).
+# Backend builds backend/ with deploy/huggingface/Dockerfile and serves from MongoDB Atlas.
+services:
+  - type: web
+    name: govintel-backend
+    runtime: docker
+    plan: free
+    dockerfilePath: ./deploy/huggingface/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: USE_MONGO
+        value: "true"
+      - key: MONGODB_DB
+        value: govintel
+      # Secrets — set these in the Render dashboard (Environment), not here:
+      - key: API_KEYS
+        sync: false
+      - key: MONGODB_URI
+        sync: false
+
+  # Next.js dashboard. Talks to the backend only through its server-side proxy,
+  # so the API key stays server-side.
+  - type: web
+    name: govintel-web
+    runtime: node
+    plan: free
+    rootDir: web
+    buildCommand: npm ci && npm run build
+    startCommand: npm run start
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      # Set in the dashboard: the backend's public URL (https://govintel-backend.onrender.com)
+      # and the same API key configured in the backend's API_KEYS map.
+      - key: BACKEND_URL
+        sync: false
+      - key: GOVINTEL_API_KEY
+        sync: false
