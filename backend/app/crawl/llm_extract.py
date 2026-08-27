@@ -1,12 +1,15 @@
-"""LLM extraction for the crawl: Claude reads the fetched headlines and returns
-clean leads, replacing the regex rules when an ANTHROPIC_API_KEY is configured.
+"""LLM extraction for the crawl: an LLM reads the fetched headlines and returns
+clean leads, replacing the regex rules when an API key is configured.
 
-One structured-output call per crawl (all headlines in a single prompt), via the
-same AnthropicLLMClient the document-extraction pipeline uses. The caller
-(``run_crawl``) falls back to ``extract_rule_based`` on any error, so a missing
-key, quota problem or API outage can never break the crawl.
+Provider order (decided in ``run_crawl``): OpenAI when OPENAI_API_KEY is set,
+else Anthropic when ANTHROPIC_API_KEY is set. One structured-output call per
+crawl (all headlines in a single prompt). The caller falls back down the chain
+and finally to ``extract_rule_based`` on any error, so a missing key, quota
+problem or API outage can never break the crawl.
 """
 from __future__ import annotations
+
+import json
 
 from app.config import Settings
 from app.extraction.llm import AnthropicLLMClient, LLMError
@@ -58,13 +61,15 @@ def _build_user_prompt(numbered: list[tuple[str, dict]]) -> str:
     return "\n".join(lines)
 
 
+def _numbered(by_sector: dict[str, list[dict]]) -> list[tuple[str, dict]]:
+    return [(vertical, item) for vertical, items in by_sector.items() for item in items]
+
+
 def extract_llm(by_sector: dict[str, list[dict]], settings: Settings,
                 llm: AnthropicLLMClient | None = None) -> list[dict]:
     """Extract leads from fetched headlines with Claude. Raises LLMError on failure
-    (the caller falls back to the rule extractor)."""
-    from app.crawl.service import _valid_company  # lazy: service imports this module
-
-    numbered = [(vertical, item) for vertical, items in by_sector.items() for item in items]
+    (the caller falls back down the extractor chain)."""
+    numbered = _numbered(by_sector)
     if not numbered:
         return []
 
@@ -81,8 +86,58 @@ def extract_llm(by_sector: dict[str, list[dict]], settings: Settings,
         )
 
     resp = llm.complete_structured(system=SYSTEM, user=_build_user_prompt(numbered), schema=SCHEMA)
-    raw_leads = (resp.data or {}).get("leads") or []
+    return _leads_from_data(resp.data, numbered)
 
+
+def extract_llm_openai(by_sector: dict[str, list[dict]], settings: Settings,
+                       client=None) -> list[dict]:
+    """Extract leads from fetched headlines with OpenAI (chat completions +
+    strict JSON-schema output). Raises LLMError on failure."""
+    numbered = _numbered(by_sector)
+    if not numbered:
+        return []
+
+    if client is None:
+        if not settings.openai_api_key:
+            raise LLMError("OPENAI_API_KEY not configured")
+        try:
+            from openai import OpenAI
+        except ImportError as exc:
+            raise LLMError(f"openai package not installed: {exc}") from exc
+        client = OpenAI(api_key=settings.openai_api_key.get_secret_value())
+
+    try:
+        resp = client.chat.completions.create(
+            model=settings.crawl_openai_model,
+            max_completion_tokens=4000,
+            messages=[
+                {"role": "system", "content": SYSTEM},
+                {"role": "user", "content": _build_user_prompt(numbered)},
+            ],
+            response_format={
+                "type": "json_schema",
+                "json_schema": {"name": "government_leads", "strict": True, "schema": SCHEMA},
+            },
+        )
+    except Exception as exc:  # includes openai API errors
+        raise LLMError(str(exc)) from exc
+
+    message = resp.choices[0].message if resp.choices else None
+    content = getattr(message, "content", None) if message else None
+    if not content:
+        refusal = getattr(message, "refusal", None) if message else None
+        raise LLMError(f"OpenAI returned no content (refusal: {refusal})")
+    try:
+        data = json.loads(content)
+    except (ValueError, TypeError) as exc:
+        raise LLMError(f"OpenAI did not return valid JSON: {exc}") from exc
+    return _leads_from_data(data, numbered)
+
+
+def _leads_from_data(data: dict | None, numbered: list[tuple[str, dict]]) -> list[dict]:
+    from app.crawl.service import _valid_company  # lazy: service imports this module
+
+    raw_leads = (data or {}).get("leads") or []
     leads: list[dict] = []
     seen: set[str] = set()
     for entry in raw_leads:

@@ -468,18 +468,29 @@ def run_crawl(per_vertical: int = 10, session_factory=SessionLocal) -> CrawlRepo
     report.fetched = sum(len(v) for v in by_sector.values())
 
     settings = get_settings()
+    log = logging.getLogger("govintel.crawl")
     leads: list[dict] | None = None
-    if settings.anthropic_api_key:
+    # Extractor chain: OpenAI (default) -> Anthropic -> regex rules. Any LLM
+    # trouble just drops to the next link; the crawl itself never breaks.
+    if settings.openai_api_key:
+        from app.crawl.llm_extract import extract_llm_openai
+
+        try:
+            leads = extract_llm_openai(by_sector, settings)
+            report.extraction = "openai"
+        except Exception as exc:  # noqa: BLE001
+            log.warning('{"event": "crawl_openai_fallback", "detail": "%s"}', exc)
+    if leads is None and settings.anthropic_api_key:
         from app.crawl.llm_extract import extract_llm
 
         try:
             leads = extract_llm(by_sector, settings)
-            report.extraction = "llm"
-        except Exception as exc:  # noqa: BLE001 - LLM trouble must not break the crawl
-            logging.getLogger("govintel.crawl").warning(
-                '{"event": "crawl_llm_fallback", "detail": "%s"}', exc)
+            report.extraction = "anthropic"
+        except Exception as exc:  # noqa: BLE001
+            log.warning('{"event": "crawl_anthropic_fallback", "detail": "%s"}', exc)
     if leads is None:
         leads = extract_rule_based(by_sector)
+        report.extraction = "rules"
     report.extracted = len(leads)
     if settings.use_mongo and settings.mongodb_uri:
         from app.api.mongo_repository import MongoLeadRepository

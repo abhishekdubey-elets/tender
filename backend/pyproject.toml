@@ -11,7 +11,8 @@ dependencies = [
     "pydantic>=2.7",
     "pydantic-settings>=2.2",
     "python-dotenv>=1.0",
-    # LLM event extraction
+    # LLM extraction (crawl: OpenAI preferred, Anthropic fallback)
+    "openai>=1.40",
     "anthropic>=0.40",
     # read API
     "fastapi>=0.110",

@@ -50,11 +50,13 @@ class Settings(BaseSettings):
     crawl_enabled: bool = True       # run the background scheduler
     crawl_interval_hours: int = 24   # once per day by default
     crawl_on_start: bool = False     # also crawl once at startup
-    # Model for LLM headline extraction; used only when anthropic_api_key is set
-    # (otherwise the crawl falls back to the rule-based extractor).
-    crawl_llm_model: str = "claude-opus-5"
+    # LLM headline extraction: OpenAI is preferred when openai_api_key is set,
+    # then Anthropic when anthropic_api_key is set, else the rule-based extractor.
+    crawl_llm_model: str = "claude-opus-5"    # Anthropic model
+    crawl_openai_model: str = "gpt-5"         # OpenAI model
 
     # --- secrets (never logged; SecretStr redacts on repr) ---
+    openai_api_key: SecretStr | None = None
     anthropic_api_key: SecretStr | None = None
     voyage_api_key: SecretStr | None = None
     # data.gov.in (Open Government Data) API key — free, from https://data.gov.in.

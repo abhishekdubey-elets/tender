@@ -1,9 +1,28 @@
-"""LLM crawl extraction: mapping, junk filtering, and rule fallback."""
+"""LLM crawl extraction: mapping, junk filtering, and the provider chain."""
+import json
+from types import SimpleNamespace
+
 import pytest
 
 from app.config import Settings
-from app.crawl.llm_extract import extract_llm
+from app.crawl.llm_extract import extract_llm, extract_llm_openai
 from app.extraction.llm import FakeLLMClient, LLMError
+
+
+class FakeOpenAI:
+    """Minimal stand-in for openai.OpenAI: chat.completions.create."""
+
+    def __init__(self, payload=None, exc: Exception | None = None):
+        self.calls: list[dict] = []
+
+        def create(**kwargs):
+            self.calls.append(kwargs)
+            if exc is not None:
+                raise exc
+            msg = SimpleNamespace(content=json.dumps(payload), refusal=None)
+            return SimpleNamespace(choices=[SimpleNamespace(message=msg)])
+
+        self.chat = SimpleNamespace(completions=SimpleNamespace(create=create))
 
 BY_SECTOR = {
     "e-Governance": [
@@ -57,7 +76,23 @@ def test_llm_error_propagates_for_caller_fallback():
         extract_llm(BY_SECTOR, _settings(), llm=llm)
 
 
-def test_run_crawl_falls_back_to_rules_on_llm_failure(monkeypatch):
+def test_openai_extraction_maps_and_calls_with_schema():
+    fake = FakeOpenAI({"leads": [
+        {"index": 0, "company": "TCS", "government_buyer": "MeitY", "amount": "₹500 crore"}]})
+    leads = extract_llm_openai(BY_SECTOR, Settings(openai_api_key="k"), client=fake)
+    assert [l["company"] for l in leads] == ["TCS"]
+    call = fake.calls[0]
+    assert call["response_format"]["json_schema"]["strict"] is True
+    assert call["messages"][0]["role"] == "system"
+
+
+def test_openai_error_raises_llm_error():
+    fake = FakeOpenAI(exc=RuntimeError("quota"))
+    with pytest.raises(LLMError):
+        extract_llm_openai(BY_SECTOR, Settings(openai_api_key="k"), client=fake)
+
+
+def _crawl_with(monkeypatch, env: dict, openai_fn=None, anthropic_fn=None):
     from app.crawl import service
 
     monkeypatch.setattr(service, "fetch_candidates", lambda per_vertical=10: {
@@ -65,13 +100,45 @@ def test_run_crawl_falls_back_to_rules_on_llm_failure(monkeypatch):
                           "source": "PTI", "date": None}]})
     monkeypatch.setattr(service, "persist_leads", lambda leads, session_factory=None: [])
     import app.config as config
+    for var in ("OPENAI_API_KEY", "ANTHROPIC_API_KEY"):
+        monkeypatch.delenv(var, raising=False)
+    for k, v in env.items():
+        monkeypatch.setenv(k, v)
+    if openai_fn is not None:
+        monkeypatch.setattr("app.crawl.llm_extract.extract_llm_openai", openai_fn)
+    if anthropic_fn is not None:
+        monkeypatch.setattr("app.crawl.llm_extract.extract_llm", anthropic_fn)
     config.get_settings.cache_clear()
-    monkeypatch.setenv("ANTHROPIC_API_KEY", "bad-key-forces-llm-path")
-    monkeypatch.setattr("app.crawl.llm_extract.extract_llm",
-                        lambda *a, **k: (_ for _ in ()).throw(LLMError("boom")))
     try:
-        report = service.run_crawl(session_factory=object)
+        return service.run_crawl(session_factory=object)
     finally:
         config.get_settings.cache_clear()
+
+
+FAKE_LEAD = {"company": "TCS", "vertical": "e-Governance", "government_buyer": "MeitY",
+             "amount": None, "what_won": "t", "source": "PTI", "date": None,
+             "confidence": 0.65, "reason_to_call": "call"}
+
+
+def test_run_crawl_prefers_openai_when_both_keys_set(monkeypatch):
+    report = _crawl_with(monkeypatch, {"OPENAI_API_KEY": "k1", "ANTHROPIC_API_KEY": "k2"},
+                         openai_fn=lambda *a, **k: [FAKE_LEAD],
+                         anthropic_fn=lambda *a, **k: pytest.fail("anthropic must not run"))
+    assert report.extraction == "openai"
+
+
+def test_run_crawl_falls_back_openai_to_anthropic(monkeypatch):
+    def boom(*a, **k):
+        raise LLMError("openai down")
+    report = _crawl_with(monkeypatch, {"OPENAI_API_KEY": "k1", "ANTHROPIC_API_KEY": "k2"},
+                         openai_fn=boom, anthropic_fn=lambda *a, **k: [FAKE_LEAD])
+    assert report.extraction == "anthropic"
+
+
+def test_run_crawl_falls_back_to_rules_when_all_llms_fail(monkeypatch):
+    def boom(*a, **k):
+        raise LLMError("down")
+    report = _crawl_with(monkeypatch, {"OPENAI_API_KEY": "k1", "ANTHROPIC_API_KEY": "k2"},
+                         openai_fn=boom, anthropic_fn=boom)
     assert report.extraction == "rules"
     assert report.extracted == 1

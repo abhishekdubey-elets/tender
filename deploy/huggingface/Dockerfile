@@ -15,7 +15,7 @@ WORKDIR /app
 # drivers are installed for import-safety but the Mongo serving path never connects.
 RUN pip install \
     "sqlalchemy>=2.0.30" "alembic>=1.13" "psycopg[binary]>=3.1" "pgvector>=0.3.0" \
-    "pydantic>=2.7" "pydantic-settings>=2.2" "python-dotenv>=1.0" "anthropic>=0.40" \
+    "pydantic>=2.7" "pydantic-settings>=2.2" "python-dotenv>=1.0" "anthropic>=0.40" "openai>=1.40" \
     "fastapi>=0.110" "uvicorn[standard]>=0.29" "websockets>=12" "pymongo[srv]>=4.6" \
     "httpx>=0.27" "beautifulsoup4>=4.12" "lxml>=5.0" "feedparser>=6.0" \
     "openpyxl>=3.1" "pypdf>=4.0" "python-docx>=1.1"
