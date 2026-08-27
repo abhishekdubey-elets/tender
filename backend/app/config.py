@@ -53,7 +53,7 @@ class Settings(BaseSettings):
     # LLM headline extraction: OpenAI is preferred when openai_api_key is set,
     # then Anthropic when anthropic_api_key is set, else the rule-based extractor.
     crawl_llm_model: str = "claude-opus-5"    # Anthropic model
-    crawl_openai_model: str = "gpt-5"         # OpenAI model
+    crawl_openai_model: str = "gpt-4o"        # OpenAI model
 
     # --- secrets (never logged; SecretStr redacts on repr) ---
     openai_api_key: SecretStr | None = None
