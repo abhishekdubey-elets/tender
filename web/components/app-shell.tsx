@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { BarChart3, Building2, RefreshCw, Radar, Search, Settings, Target } from "lucide-react";
+import { RefreshCw, Search, Target } from "lucide-react";
 import { useEffect, useState } from "react";
 import { ThemeToggle } from "./ui";
 
@@ -29,10 +29,6 @@ function CrawlButton({ onCrawl }: { onCrawl: () => Promise<void> }) {
 
 const NAV = [
   { icon: Target, label: "Leads", active: true },
-  { icon: Building2, label: "Companies", active: false },
-  { icon: Radar, label: "Signals", active: false },
-  { icon: BarChart3, label: "Analytics", active: false },
-  { icon: Settings, label: "Settings", active: false },
 ];
 
 function RefreshPill({

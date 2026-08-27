@@ -16,7 +16,7 @@ Your repo already tracks `origin/main`, so Render can build straight from GitHub
    root/context `backend`.)*
 3. In the service's **Environment**, add the two secrets (the render.yaml marks them
    `sync:false`, so they're not stored in the repo):
-   - `API_KEYS` = `{"c6IH1KModmD5BdDLkWPVaOIcwLi5fDYy":"11111111-1111-1111-1111-111111111111:analyst"}`
+   - `API_KEYS` = `{"<YOUR-STRONG-RANDOM-KEY>":"11111111-1111-1111-1111-111111111111:analyst"}`
    - `MONGODB_URI` = your `mongodb+srv://…` from `backend/.env` (rotated password)
    (`USE_MONGO=true` and `MONGODB_DB=govintel` come from render.yaml.)
 4. **Atlas → Network Access**: add `0.0.0.0/0` (Render egress IPs are dynamic on the
@@ -26,7 +26,7 @@ Your repo already tracks `origin/main`, so Render can build straight from GitHub
 
 ```
 curl https://govintel-backend.onrender.com/health
-curl -H "X-API-Key: c6IH1KModmD5BdDLkWPVaOIcwLi5fDYy" https://govintel-backend.onrender.com/api/leads
+curl -H "X-API-Key: <YOUR-STRONG-RANDOM-KEY>" https://govintel-backend.onrender.com/api/leads
 ```
 
 ## Notes
