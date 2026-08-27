@@ -178,6 +178,45 @@ def _to_date(text: str | None) -> date | None:
         return None
 
 
+# Words that can never *start* a company name pulled from a headline. Catches
+# clause-led headlines ("We win ₹50 cr order…" → company "We") and editorial
+# prefixes. Precision over recall: a rejected real company just waits for a
+# cleaner headline.
+_COMPANY_BAD_FIRST = {
+    "we", "it", "they", "he", "she", "i", "you", "this", "that", "these", "those",
+    "the", "a", "an", "its", "our", "their", "his", "her",
+    "why", "how", "what", "when", "where", "who", "which",
+    "after", "as", "amid", "with", "from", "in", "on", "at", "by", "now", "here",
+    "breaking", "exclusive", "watch", "explained", "live", "update", "updates",
+    "big", "top", "just", "meet", "india", "indian", "govt", "government",
+    "stocks", "stock", "shares", "share", "sensex", "nifty", "market", "markets",
+}
+
+# A company name must not itself be a government body (those are buyers).
+_COMPANY_GOV_PREFIXES = ("ministry", "government", "govt", "department", "state of",
+                         "national", "office of", "directorate")
+
+
+def _valid_company(name: str) -> bool:
+    """Does the headline fragment look like an actual company name?"""
+    if not name or not (3 <= len(name) <= 80):
+        return False
+    words = name.split()
+    if len(words) > 8:  # a clause, not a name
+        return False
+    first = words[0].strip("'\"“”‘’").lower()
+    if first in _COMPANY_BAD_FIRST:
+        return False
+    low = name.lower()
+    if any(low.startswith(p) for p in _COMPANY_GOV_PREFIXES):
+        return False
+    # Proper-noun shape: at least one word beginning with an uppercase letter,
+    # and the fragment can't be one all-lowercase word.
+    if not any(w[:1].isupper() for w in words):
+        return False
+    return True
+
+
 def extract_rule_based(by_sector: dict[str, list[dict]]) -> list[dict]:
     """Conservative extraction: keep only clear "company won <amount> from a
     government counterparty" headlines. Precision over recall."""
@@ -185,17 +224,25 @@ def extract_rule_based(by_sector: dict[str, list[dict]]) -> list[dict]:
     for vertical, items in by_sector.items():
         for it in items:
             title = it.get("title") or ""
-            low = title.lower()
+            # Drop a short editorial label ("Order win:", "Breaking:") so the
+            # verb/company matching runs on the real sentence — but only when
+            # the remainder still carries a verb and an amount on its own.
+            work = title
+            pre, sep, post = title.partition(": ")
+            if sep and len(pre.split()) <= 4 and _AMOUNT_RE.search(post) and _VERB_RE.search(post):
+                work = post
+            low = work.lower()
             if any(n in low for n in _NOISE_MARKERS):
                 continue
-            amt = _AMOUNT_RE.search(title)
-            verb = _VERB_RE.search(title)
+            amt = _AMOUNT_RE.search(work)
+            verb = _VERB_RE.search(work)
             if not amt or not verb or not any(g in low for g in _GOV_MARKERS):
                 continue
-            company = title[: verb.start()].strip(" -–—:")
-            # trim a trailing source that slipped in, and cap length
+            company = work[: verb.start()].strip(" -–—:")
+            # trim a trailing source that slipped in, drop stray quotes
             company = re.split(r"\s[-–—]\s", company)[0].strip()
-            if not company or len(company) > 80:
+            company = company.strip("'\"“”‘’ ")
+            if not _valid_company(company):
                 continue
             buyer_m = _FROM_RE.search(title)
             buyer = buyer_m.group(1).strip() if buyer_m else "Government (India)"
