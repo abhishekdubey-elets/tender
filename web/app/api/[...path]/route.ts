@@ -1,6 +1,10 @@
 import { NextRequest } from "next/server";
 
-const BACKEND = process.env.BACKEND_URL || "http://127.0.0.1:8000";
+// Tolerate a trailing slash (or /api suffix) in BACKEND_URL — the proxy
+// appends /api/<path> itself, so either would otherwise 404 every request.
+const BACKEND = (process.env.BACKEND_URL || "http://127.0.0.1:8000")
+  .replace(/\/+$/, "")
+  .replace(/\/api$/, "");
 const KEY = process.env.GOVINTEL_API_KEY || "dev-local-key";
 
 async function proxy(req: NextRequest, ctx: { params: { path: string[] } }) {
