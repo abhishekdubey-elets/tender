@@ -1,8 +1,9 @@
 """Lead board, detail and feedback endpoints (org-scoped, rate-limited)."""
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request, status
 
+from app.api.routers.crawl import maybe_crawl_stale
 from app.api.schemas import FeedbackAck, FeedbackIn, LeadDetail, LeadSummary
 from app.api.security import Principal, rate_limit
 
@@ -12,6 +13,7 @@ router = APIRouter(prefix="/api", tags=["leads"])
 @router.get("/leads", response_model=list[LeadSummary])
 def list_leads(
     request: Request,
+    background_tasks: BackgroundTasks,
     principal: Principal = Depends(rate_limit),
     score_min: int = Query(0, ge=0, le=100),
     sector: str | None = None,
@@ -25,6 +27,10 @@ def list_leads(
     filters = {"score_min": score_min, "sector": sector, "product": product,
                "event_type": event_type, "gov_org": gov_org, "status": status_,
                "company": company, "date_days": date_days}
+    # Lazy crawl scheduler: after the response is sent, crawl if the last crawl
+    # is older than crawl_interval_hours (page traffic drives the schedule on
+    # hosts that sleep when idle).
+    background_tasks.add_task(maybe_crawl_stale, request.app)
     return request.app.state.repository.list_leads(principal.organization_id, filters)
 
 

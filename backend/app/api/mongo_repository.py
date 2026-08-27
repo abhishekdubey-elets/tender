@@ -67,6 +67,14 @@ class MongoLeadRepository:
         self.leads.create_index([("organization_id", 1), ("status", 1)])
         self.feedback.create_index([("lead_id", 1), ("occurred_at", -1)])
 
+    # -- app metadata (e.g. last crawl time; survives free-tier restarts) ---
+    def get_meta(self, key: str):
+        doc = self._db["meta"].find_one({"_id": key})
+        return doc.get("value") if doc else None
+
+    def set_meta(self, key: str, value) -> None:
+        self._db["meta"].update_one({"_id": key}, {"$set": {"value": value}}, upsert=True)
+
     # -- write (used by the export script / Phase-2 crawl) ------------------
     def upsert_lead(self, organization_id: str, detail: dict) -> None:
         doc = dict(detail)
