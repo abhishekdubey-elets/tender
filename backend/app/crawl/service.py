@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import hashlib
 import html
+import logging
 import re
 import uuid
 from dataclasses import dataclass, field
@@ -94,12 +95,14 @@ class CrawlReport:
     persisted: int = 0
     companies: list[str] = field(default_factory=list)
     duration_ms: float = 0.0
+    extraction: str = "rules"  # "llm" when Claude did the extraction
 
     def as_dict(self) -> dict:
         return {
             "started_at": self.started_at, "fetched": self.fetched,
             "extracted": self.extracted, "persisted": self.persisted,
             "companies": self.companies, "duration_ms": round(self.duration_ms, 1),
+            "extraction": self.extraction,
         }
 
 
@@ -463,10 +466,21 @@ def run_crawl(per_vertical: int = 10, session_factory=SessionLocal) -> CrawlRepo
     t0 = time.perf_counter()
     by_sector = fetch_candidates(per_vertical=per_vertical)
     report.fetched = sum(len(v) for v in by_sector.values())
-    leads = extract_rule_based(by_sector)
-    report.extracted = len(leads)
 
     settings = get_settings()
+    leads: list[dict] | None = None
+    if settings.anthropic_api_key:
+        from app.crawl.llm_extract import extract_llm
+
+        try:
+            leads = extract_llm(by_sector, settings)
+            report.extraction = "llm"
+        except Exception as exc:  # noqa: BLE001 - LLM trouble must not break the crawl
+            logging.getLogger("govintel.crawl").warning(
+                '{"event": "crawl_llm_fallback", "detail": "%s"}', exc)
+    if leads is None:
+        leads = extract_rule_based(by_sector)
+    report.extracted = len(leads)
     if settings.use_mongo and settings.mongodb_uri:
         from app.api.mongo_repository import MongoLeadRepository
         repo = MongoLeadRepository(settings.mongodb_uri.get_secret_value(), settings.mongodb_db)

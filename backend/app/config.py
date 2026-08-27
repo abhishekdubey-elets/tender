@@ -46,10 +46,13 @@ class Settings(BaseSettings):
     mongodb_uri: SecretStr | None = None
     mongodb_db: str = "govintel"
 
-    # --- automated crawl (Google News -> rule-extracted news leads) ---
+    # --- automated crawl (Google News -> extracted news leads) ---
     crawl_enabled: bool = True       # run the background scheduler
     crawl_interval_hours: int = 24   # once per day by default
     crawl_on_start: bool = False     # also crawl once at startup
+    # Model for LLM headline extraction; used only when anthropic_api_key is set
+    # (otherwise the crawl falls back to the rule-based extractor).
+    crawl_llm_model: str = "claude-opus-5"
 
     # --- secrets (never logged; SecretStr redacts on repr) ---
     anthropic_api_key: SecretStr | None = None
