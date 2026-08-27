@@ -106,19 +106,25 @@ def extract_llm_openai(by_sector: dict[str, list[dict]], settings: Settings,
             raise LLMError(f"openai package not installed: {exc}") from exc
         client = OpenAI(api_key=settings.openai_api_key.get_secret_value())
 
+    model = settings.crawl_openai_model
+    kwargs: dict = {
+        "model": model,
+        # Reasoning models (gpt-5 / o-series) burn "reasoning tokens" from this
+        # budget before writing output — too low a cap yields empty content.
+        "max_completion_tokens": 16000,
+        "messages": [
+            {"role": "system", "content": SYSTEM},
+            {"role": "user", "content": _build_user_prompt(numbered)},
+        ],
+        "response_format": {
+            "type": "json_schema",
+            "json_schema": {"name": "government_leads", "strict": True, "schema": SCHEMA},
+        },
+    }
+    if model.startswith(("gpt-5", "o")):
+        kwargs["reasoning_effort"] = "low"  # headline triage needs no deep reasoning
     try:
-        resp = client.chat.completions.create(
-            model=settings.crawl_openai_model,
-            max_completion_tokens=4000,
-            messages=[
-                {"role": "system", "content": SYSTEM},
-                {"role": "user", "content": _build_user_prompt(numbered)},
-            ],
-            response_format={
-                "type": "json_schema",
-                "json_schema": {"name": "government_leads", "strict": True, "schema": SCHEMA},
-            },
-        )
+        resp = client.chat.completions.create(**kwargs)
     except Exception as exc:  # includes openai API errors
         raise LLMError(str(exc)) from exc
 
